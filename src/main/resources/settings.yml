@@ -1,0 +1,5 @@
+settings:
+  reroute-loc:
+  min-players: 2
+  max-players: 28
+  wall-time: 600

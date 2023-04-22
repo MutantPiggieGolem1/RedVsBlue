@@ -1,0 +1,153 @@
+package me.stephenminer.redvblue;
+
+import org.bukkit.ChatColor;
+import org.bukkit.Color;
+import org.bukkit.DyeColor;
+import org.bukkit.Material;
+import org.bukkit.block.Banner;
+import org.bukkit.block.BlockState;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Item;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.meta.BannerMeta;
+import org.bukkit.inventory.meta.BlockStateMeta;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.LeatherArmorMeta;
+import org.checkerframework.checker.units.qual.A;
+
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+
+public class Items {
+
+    public ItemStack arenaWand(){
+        ItemStack item = new ItemStack(Material.WOODEN_SHOVEL);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(ChatColor.GOLD + "Arena Wand");
+        List<String> lore = new ArrayList<>();
+        lore.add(ChatColor.ITALIC + "Sets corners for the arena");
+        lore.add(ChatColor.YELLOW + "Right-Click set pos2");
+        lore.add(ChatColor.YELLOW + "Left-Click set pos1");
+        lore.add(ChatColor.BLACK + "arena-wand");
+        meta.setLore(lore);
+        meta.setUnbreakable(true);
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    public ItemStack wallWand(String id){
+        ItemStack item = new ItemStack(Material.STONE_SHOVEL);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(ChatColor.GOLD + "Wall Wand");
+        List<String> lore = new ArrayList<>();
+        lore.add(ChatColor.ITALIC + "For adding a wall to your arenas!");
+        lore.add(ChatColor.YELLOW + "Left-Click set pos1");
+        lore.add(ChatColor.YELLOW + "Right-Click set pos2");
+        lore.add(ChatColor.AQUA + "Arena: " + id);
+        lore.add(ChatColor.BLACK + "wall-wand");
+        meta.setLore(lore);
+        meta.setUnbreakable(true);
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    public ItemStack teamPants(int team){
+        ItemStack item = new ItemStack(Material.LEATHER_LEGGINGS);
+        LeatherArmorMeta meta = (LeatherArmorMeta) item.getItemMeta();
+        meta.setColor(team == 0 ? Color.RED : Color.BLUE);
+        item.setItemMeta(meta);
+        return item;
+    }
+    public ItemStack teamBoots(int team){
+        ItemStack item = new ItemStack(Material.LEATHER_BOOTS);
+        LeatherArmorMeta meta = (LeatherArmorMeta) item.getItemMeta();
+        meta.setColor(team == 0 ? Color.RED : Color.BLUE);
+        meta.addEnchant(Enchantment.PROTECTION_FALL,1,true);
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    public ItemStack shield(int team){
+        ItemStack item = new ItemStack(Material.SHIELD);
+        BlockStateMeta meta = (BlockStateMeta) item.getItemMeta();
+        Banner banner = (Banner) meta.getBlockState();
+        banner.setBaseColor(team == 0 ? DyeColor.RED : DyeColor.BLUE);
+        meta.setBlockState(banner);
+        meta.setUnbreakable(true);
+        item.setItemMeta(meta);
+        return item;
+    }
+    public void outfitPlayer(Player player, int team){
+        PlayerInventory inv = player.getInventory();
+        inv.setHelmet(new ItemStack(Material.CHAINMAIL_HELMET));
+        inv.setChestplate(new ItemStack(Material.CHAINMAIL_CHESTPLATE));
+        inv.setLeggings(teamPants(team));
+        inv.setBoots(teamBoots(team));
+        inv.addItem(new ItemStack(Material.WOODEN_AXE));
+        inv.addItem(new ItemStack(Material.IRON_PICKAXE));
+        inv.setItemInOffHand(shield(team));
+
+        Material mat = team == 0 ? Material.RED_BANNER : Material.BLUE_BANNER;
+        ItemStack item = new ItemStack(mat);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(ChatColor.GOLD + "Team Standard");
+        meta.addEnchant(Enchantment.THORNS, 3, true);
+        item.setItemMeta(meta);
+        inv.addItem(item);
+    }
+
+    public ItemStack throwingJuice(int uses){
+        ItemStack item = new ItemStack(Material.NETHER_STAR);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(ChatColor.YELLOW + "Throwing Juice (" + uses + " uses)");
+        List<String> lore = new ArrayList<>();
+        lore.add(ChatColor.ITALIC + "A hearty way to help a friend!");
+        lore.add(ChatColor.YELLOW + "R-Click: Shoot an AOE healing beam");
+        lore.add(ChatColor.YELLOW + "Uses: " + uses);
+        lore.add(ChatColor.BLACK + "throwingjuice");
+        meta.setLore(lore);
+        meta.addEnchant(Enchantment.THORNS, ThreadLocalRandom.current().nextInt(4) + 1, true);
+        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    public ItemStack manaPowder(){
+        ItemStack item = new ItemStack(Material.GUNPOWDER);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(ChatColor.AQUA + "Mana-Powder");
+        List<String> lore = new ArrayList<>();
+        lore.add(ChatColor.ITALIC + "Not that knife ear mana!");
+        lore.add(ChatColor.ITALIC + "This is good dwarf mana!");
+        lore.add(ChatColor.YELLOW + "Ammo for mana-powered weapons");
+        lore.add(ChatColor.BLACK + "manapowder");
+        meta.setLore(lore);
+        meta.addEnchant(Enchantment.KNOCKBACK,2, false);
+        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    public ItemStack longRifle(){
+        ItemStack item = new ItemStack(Material.WOODEN_HOE);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Dwarf Long-Rifle");
+        List<String> lore = new ArrayList<>();
+        lore.add(ChatColor.ITALIC + "Latest dwarf innovation! Combine arrows with mana!");
+        lore.add(ChatColor.ITALIC + "Watch out for the recoil!");
+        lore.add(ChatColor.YELLOW + "Requires mana powder & arrows to use");
+        lore.add(ChatColor.YELLOW + "R-Click: Shoot");
+        lore.add(ChatColor.BLACK + "Shift: Zoom ");
+        lore.add(ChatColor.BLACK + "longrifle");
+        meta.setLore(lore);
+        meta.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL,4,true);
+        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        item.setItemMeta(meta);
+        return item;
+    }
+}
