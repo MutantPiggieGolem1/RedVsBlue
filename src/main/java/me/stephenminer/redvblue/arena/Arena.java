@@ -330,27 +330,38 @@ public class Arena {
             }
         }else{
             String lowellCheck = "[Lowell]";
-           // String otherCheck = "[place-holder]";
-            TeamChecker checker = new TeamChecker(plugin);
+            String otherCheck = "[place-holder]";
             boolean rand = ThreadLocalRandom.current().nextBoolean();;
             if (rand){
-                for (UUID uuid : players){
-                    Player player = Bukkit.getPlayer(uuid);
-                    if (player == null) continue;
-                    if (checker.hasPrefix(player, lowellCheck)){
-                        red.
-                    }
-                }
+                assignTeam(red,lowellCheck, true);
+                assignTeam(blue, otherCheck, false);
+            }else {
+                assignTeam(red, otherCheck, true);
+                assignTeam(blue, lowellCheck, false);
             }
         }
         broadcastTitle(ChatColor.GOLD + "Red vs Blue");
     }
 
-    private void assignTeam(Team team, String checkFor){
+    private void assignTeam(Team team, String checkFor, boolean red){
+        TeamChecker checker = new TeamChecker(plugin);
+        Items items = new Items();
         for (UUID uuid : players){
             Player player = Bukkit.getPlayer(uuid);
             if (player == null) continue;
+            if (checker.hasPrefix(player,checkFor)) {
+                team.addPlayer(player);
+                int teamId;
+                if (red) {
+                    player.teleport(redSpawn);
+                    teamId = 0;
+                } else {
+                    player.teleport(blueSpawn);
+                    teamId = 1;
+                }
 
+                items.outfitPlayer(player,teamId);
+            }
         }
     }
 
