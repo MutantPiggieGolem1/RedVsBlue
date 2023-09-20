@@ -1,9 +1,6 @@
 package me.stephenminer.redvblue;
 
-import org.bukkit.ChatColor;
-import org.bukkit.Color;
-import org.bukkit.DyeColor;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Banner;
 import org.bukkit.block.BlockState;
 import org.bukkit.enchantments.Enchantment;
@@ -16,6 +13,8 @@ import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.checkerframework.checker.units.qual.A;
 
 
@@ -24,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Items {
+    public static NamespacedKey USES = new NamespacedKey(JavaPlugin.getPlugin(RedBlue.class),"rb:uses");
 
     public ItemStack arenaWand(){
         ItemStack item = new ItemStack(Material.WOODEN_SHOVEL);
@@ -111,6 +111,7 @@ public class Items {
         lore.add(ChatColor.YELLOW + "Uses: " + uses);
         lore.add(ChatColor.BLACK + "throwingjuice");
         meta.setLore(lore);
+        meta.getPersistentDataContainer().set(Items.USES, PersistentDataType.INTEGER,uses);
         meta.addEnchant(Enchantment.THORNS, ThreadLocalRandom.current().nextInt(4) + 1, true);
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         item.setItemMeta(meta);

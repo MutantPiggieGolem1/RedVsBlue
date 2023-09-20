@@ -48,6 +48,8 @@ public class Arena {
     private Set<GameChest> chests;
     private HashMap<UUID, Team> offline;
 
+    private ArenaSaver saver;
+
     public HashMap<Location, DataPair> blockMap;
 
     private Scoreboard board;
@@ -75,6 +77,8 @@ public class Arena {
         players = new ArrayList<>();
         blockMap = new HashMap<>();
         chests = new HashSet<>();
+        saver = new ArenaSaver(this);
+        saver.saveMap();
         updateBoard();
     }
 
@@ -181,6 +185,10 @@ public class Arena {
                 int count = 0;
                 @Override
                 public void run(){
+                    if (saver.isSaving()) {
+                        if (count % 20 == 0)
+                        return;
+                    }
                     if (count % 20 == 0){
                         broadcast(Sound.ENTITY_CAT_AMBIENT,2,1);
                         broadcast(ChatColor.GOLD + "" + ((max - count) / 20) + " seconds until game start!");
@@ -193,6 +201,8 @@ public class Arena {
                         return;
                     }
                     if (count >= max){
+                        if (saver.isSaving())broadcast(ChatColor.YELLOW + "Map is saving" );
+                        count-=20;
                         start();
                         this.cancel();
                         return;
@@ -266,17 +276,29 @@ public class Arena {
         new BukkitRunnable(){
             @Override
             public void run(){
-                Arena.arenas.remove(arena);
                 board.clearSlot(DisplaySlot.SIDEBAR);
-
+                offline.clear();
+                players.clear();
+                wall.destroyWall();
                 for (int i = players.size()-1; i >= 0; i--){
                     UUID uuid = players.get(i);
                     Player p = Bukkit.getPlayer(uuid);
                     removePlayer(p);
                 }
-                offline.clear();
-                players.clear();
-                wall.destroyWall();
+                saver.loadMap();
+                new BukkitRunnable(){
+                    @Override
+                    public void run() {
+                        if (!saver.isLoading()){
+                            Arena.arenas.remove(arena);
+                        }
+                    }
+                }.runTaskTimer(plugin,1,1);
+
+
+
+
+
                 reset();
             }
         }.runTaskLater(plugin, 100);
@@ -376,7 +398,7 @@ public class Arena {
                 }
                 if (time % 20 == 0 && (fallTime-time) / 20 == 60) {
                     broadcast(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 2, 2);
-                    broadcast(ChatColor.YELLOW + "1 Minute Until the Wall Breaks BAD");
+                    broadcast(ChatColor.YELLOW + "1 Minute Until the Wall Drops");
                 }
                 if (time % 20 == 0 & (fallTime-time) / 20 == 30){
                     broadcast(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 2, 2);
@@ -591,6 +613,9 @@ public class Arena {
     }
     public Set<GameChest> getGameChests(){ return chests; }
 
+    public Location getLoc1(){ return loc1; }
+    public Location getLoc2(){ return loc2; }
+
     /**
      *
      * @return the players in the arena;
@@ -679,6 +704,13 @@ public class Arena {
         String str = seconds >= 10 ? minutes + ":" + seconds : minutes + ":0" + seconds;
 
         return str;
+    }
+
+    public Team red(){
+        return board.getTeam("red");
+    }
+    public Team blue(){
+        return board.getTeam("blue");
     }
 
 
