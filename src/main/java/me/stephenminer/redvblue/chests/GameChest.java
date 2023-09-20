@@ -52,6 +52,7 @@ public class GameChest {
         block.setType(mat);
         if (block.getState() instanceof Container container){
             Inventory inv = container.getInventory();
+            inv.clear();
             ItemStack[] table = loottables.get(ThreadLocalRandom.current().nextInt(loottables.size()));
             inv.setContents(table);
             return true;
