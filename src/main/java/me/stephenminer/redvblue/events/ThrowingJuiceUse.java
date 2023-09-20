@@ -3,10 +3,7 @@ package me.stephenminer.redvblue.events;
 import me.stephenminer.redvblue.Items;
 import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.arena.Arena;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -25,8 +22,7 @@ import org.bukkit.util.Vector;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.UUID;
-//TODO: Finsih Class...
+
 public class ThrowingJuiceUse implements Listener {
     private final RedBlue plugin;
     public ThrowingJuiceUse(RedBlue plugin){
@@ -40,7 +36,7 @@ public class ThrowingJuiceUse implements Listener {
         if (!event.hasItem()) return;
         ItemStack item = event.getItem();
         Player player = event.getPlayer();
-        if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getAction() != Action.RIGHT_CLICK_AIR) return;
+      //  if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getAction() != Action.RIGHT_CLICK_AIR) return;
         if (player.hasCooldown(Material.NETHER_STAR)) return;
         if (plugin.checkLore(item,"throwingjuice")){
             shootBeam(player,item);
@@ -74,8 +70,15 @@ public class ThrowingJuiceUse implements Listener {
         boolean hitAnything = false;
         Location loc = shooter.getEyeLocation();
         Vector dir = shooter.getLocation().getDirection();
-        for (float i = 0; i < beamLength; i+=0.25f){
-            if (checkCollision(shooter,arenaIn,loc)) hitAnything=true;
+        World world = loc.getWorld();
+        for (int i = 0; i < beamLength; i++){
+
+            world.spawnParticle(Particle.HEART,loc,1);
+            if (checkCollision(shooter,arenaIn,loc)){
+                hitAnything=true;
+                updateUses(item);
+                return;
+            }
             loc.add(dir);
         }
         if (hitAnything) updateUses(item);

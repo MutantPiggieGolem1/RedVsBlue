@@ -278,13 +278,15 @@ public class Arena {
             public void run(){
                 board.clearSlot(DisplaySlot.SIDEBAR);
                 offline.clear();
-                players.clear();
+
                 wall.destroyWall();
                 for (int i = players.size()-1; i >= 0; i--){
                     UUID uuid = players.get(i);
                     Player p = Bukkit.getPlayer(uuid);
+                    if (p == null) continue;
                     removePlayer(p);
                 }
+                players.clear();
                 saver.loadMap();
                 new BukkitRunnable(){
                     @Override
@@ -371,19 +373,17 @@ public class Arena {
         for (UUID uuid : players){
             Player player = Bukkit.getPlayer(uuid);
             if (player == null) continue;
-            if (checker.hasPrefix(player,checkFor)) {
-                team.addPlayer(player);
-                int teamId;
-                if (red) {
-                    player.teleport(redSpawn);
-                    teamId = 0;
-                } else {
-                    player.teleport(blueSpawn);
-                    teamId = 1;
-                }
-
-                items.outfitPlayer(player,teamId);
+            team.addPlayer(player);
+            int teamId;
+            if (red) {
+                player.teleport(redSpawn);
+                teamId = 0;
+            } else {
+                player.teleport(blueSpawn);
+                teamId = 1;
             }
+
+            items.outfitPlayer(player,teamId);
         }
     }
 

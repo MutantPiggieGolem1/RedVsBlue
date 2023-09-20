@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Items {
-    public static NamespacedKey USES = new NamespacedKey(JavaPlugin.getPlugin(RedBlue.class),"rb:uses");
+    public static NamespacedKey USES = new NamespacedKey(JavaPlugin.getPlugin(RedBlue.class),"rbuses");
 
     public ItemStack arenaWand(){
         ItemStack item = new ItemStack(Material.WOODEN_SHOVEL);
@@ -142,8 +142,7 @@ public class Items {
         lore.add(ChatColor.ITALIC + "Latest dwarf innovation! Combine arrows with mana!");
         lore.add(ChatColor.ITALIC + "Watch out for the recoil!");
         lore.add(ChatColor.YELLOW + "Requires mana powder & arrows to use");
-        lore.add(ChatColor.YELLOW + "R-Click: Shoot");
-        lore.add(ChatColor.BLACK + "Shift: Zoom ");
+        lore.add(ChatColor.YELLOW + "R-Click while shifting: Shoot");
         lore.add(ChatColor.BLACK + "longrifle");
         meta.setLore(lore);
         meta.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL,4,true);

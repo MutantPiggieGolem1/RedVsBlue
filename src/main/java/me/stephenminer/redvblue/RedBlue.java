@@ -3,9 +3,10 @@ package me.stephenminer.redvblue;
 import me.stephenminer.redvblue.arena.Arena;
 import me.stephenminer.redvblue.chests.GuiEvents;
 import me.stephenminer.redvblue.events.ArenaSetup;
+import me.stephenminer.redvblue.events.LongRifleUse;
 import me.stephenminer.redvblue.events.PlayerHandling;
 import me.stephenminer.redvblue.commands.*;
-import net.luckperms.api.LuckPerms;
+import me.stephenminer.redvblue.events.ThrowingJuiceUse;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -20,7 +21,6 @@ import java.util.Collection;
 import java.util.List;
 
 public final class RedBlue extends JavaPlugin {
-    public LuckPerms luckPerms;
     public ConfigFile arenas;
     public ConfigFile settings;
     public ConfigFile tables;
@@ -34,10 +34,6 @@ public final class RedBlue extends JavaPlugin {
             rerouteLoc = fromString(this.settings.getConfig().getString("settings.reroute-loc"));
         registerCommands();
         registerEvents();
-        RegisteredServiceProvider<LuckPerms> luckPermProvider = Bukkit.getServicesManager().getRegistration(LuckPerms.class);
-        if (luckPermProvider != null){
-            luckPerms = luckPermProvider.getProvider();
-        }
 
     }
 
@@ -57,6 +53,8 @@ public final class RedBlue extends JavaPlugin {
         pm.registerEvents(new PlayerHandling(this), this);
         pm.registerEvents(new GuiEvents(this), this);
         pm.registerEvents(new ArenaSetup(this), this);
+        pm.registerEvents(new LongRifleUse(this), this);
+        pm.registerEvents(new ThrowingJuiceUse(this), this);
     }
     private void registerCommands(){
         getCommand("setRerouteLoc").setExecutor(new RerouteLoc(this));
@@ -122,6 +120,7 @@ public final class RedBlue extends JavaPlugin {
     }
 
     public boolean checkLore(ItemStack item, String check){
+        if (item == null) return false;
         if (item.hasItemMeta() && item.getItemMeta().hasLore()){
             List<String> lore = item.getItemMeta().getLore();
             check = check.toLowerCase();
