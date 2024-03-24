@@ -127,6 +127,10 @@ public class ArenaSetup implements Listener {
                 }
             }
             String sWall = findWall(id, event.getBlock());
+            if (sWall == null){
+                player.sendMessage(ChatColor.RED + "There is no wall here!");
+                return;
+            }
             SPair pair = new SPair(id, sWall);
             canDelete.put(player.getUniqueId(),pair);
             player.sendMessage(ChatColor.GREEN + "Type confirm in chat to confirm deletion");
@@ -236,7 +240,8 @@ public class ArenaSetup implements Listener {
     }
 
     private String findWall(String arenaId, Block block){
-        List<String> walls = plugin.arenas.getConfig().getStringList(arenaId);
+        String path = "arenas." + arenaId + ".walls";
+        List<String> walls = plugin.arenas.getConfig().getStringList(path);
         for (String sWall : walls){
             Wall wall = new Wall(sWall);
             if (wall.isOnWall(block.getLocation())) return sWall;

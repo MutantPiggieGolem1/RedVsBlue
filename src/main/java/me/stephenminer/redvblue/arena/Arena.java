@@ -348,7 +348,6 @@ public class Arena {
         walls.forEach(Wall::buildWall);
         for (NewLootChest lootChest : chests){
             lootChest.loadChest();
-
         }
         wallTimer();
         Team red = board.getTeam("red");

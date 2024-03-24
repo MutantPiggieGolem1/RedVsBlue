@@ -39,7 +39,7 @@ public class ArenaBuilder {
 
 
     public Set<NewLootChest> loadLootChests(){
-        String path = "arenas." + id + "loot-chests";
+        String path = "arenas." + id + ".loot-chests";
         Set<NewLootChest> chests = new HashSet<>();
         if (!plugin.arenas.getConfig().contains(path)) return chests;
         List<String> stringChests  = plugin.arenas.getConfig().getStringList(path);

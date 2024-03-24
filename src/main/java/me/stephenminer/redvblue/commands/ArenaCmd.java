@@ -76,7 +76,8 @@ public class ArenaCmd implements CommandExecutor, TabCompleter {
                         player.sendMessage(ChatColor.RED + "Invalid Material, defaulting to glass!");
                         mat = Material.GLASS;
                     }
-                    setWallType(id, mat);
+                    player.sendMessage(ChatColor.YELLOW + "This command is undergoing repairs!");
+                   // setWallType(id, mat);
                 }
             }
         }else  sender.sendMessage(ChatColor.RED + "You need to be a player to use this command!");

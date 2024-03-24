@@ -3,6 +3,7 @@ package me.stephenminer.redvblue.chests;
 import me.stephenminer.redvblue.Items;
 import me.stephenminer.redvblue.RedBlue;
 import net.md_5.bungee.api.chat.hover.content.Item;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 
 import org.bukkit.Location;
@@ -47,11 +48,12 @@ public class NewLootChest {
 
 
 
+
     public void loadChest(){
         Block block = loc.getBlock();
         block.setType(mat);
         Container container = (Container) block.getState();
-        Inventory inv = container.getInventory();
+        Inventory inv = container.getSnapshotInventory();
         NewLootTable lootTable = loadTable();
         lootTable.populate(inv);
         container.update(true);

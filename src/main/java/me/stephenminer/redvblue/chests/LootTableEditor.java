@@ -71,9 +71,12 @@ public class LootTableEditor {
      * Writes inventory contents from gui to table. Removes entries from table not in gui, and adds entries to table if they aren't already there from gui
      */
     public void writeContents(){
-        List<String> names = Arrays.stream(gui.getContents())
-                .map(item-> item.hasItemMeta() && item.getItemMeta().hasDisplayName() ? ChatColor.stripColor(item.getItemMeta().getDisplayName()) : item.getType().name())
-                .toList();
+        List<String> names = new ArrayList<>();
+        for (ItemStack item : gui.getContents()){
+            if (item == null) continue;
+            String name = item.hasItemMeta() && item.getItemMeta().hasDisplayName() ? ChatColor.stripColor(item.getItemMeta().getDisplayName()) : item.getType().name();
+            names.add(name);
+        }
         HashMap<String, LootItem> loot = table.getItemMap();
         Set<String> realNames = new HashSet<>(loot.keySet());
         for (String name : realNames){
@@ -84,7 +87,9 @@ public class LootTableEditor {
             if (item == null) continue;
             revertItem(item);
             String name = itemName(item);
-            if (!realNames.contains(name)) table.addItem(item);
+            if (!realNames.contains(name)) {
+                table.addItem(item);
+            }
         }
         table.save();
     }

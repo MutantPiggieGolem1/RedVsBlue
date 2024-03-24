@@ -19,7 +19,7 @@ public class NewLootTable {
     private final RedBlue plugin;
     private final String id;
 
-    private int minEntries, maxRolls;
+    private int minEntries, maxRolls, maxAmount,minAmount;
     /**
      * String keys should only be item names associated with the LootItem entry;
      */
@@ -52,7 +52,9 @@ public class NewLootTable {
         int slot = rollSlot(inventory);
         for (LootItem lootItem : sortedByChance()){
             if (lootItem.chance() <= roll) {
-                inventory.setItem(slot, lootItem.item());
+                ItemStack add = new ItemStack(lootItem.item());
+                add.setAmount(ThreadLocalRandom.current().nextInt(minAmount,lootItem.item().getAmount()+1));
+                inventory.setItem(slot, add);
                 return true;
             }
         }
@@ -60,7 +62,7 @@ public class NewLootTable {
     }
 
     private List<LootItem> sortedByChance(){
-        return itemTable.entrySet().stream().map(entry -> entry.getValue()).sorted(Comparator.comparingInt(LootItem::chance)).toList();
+        return itemTable.values().stream().sorted(Comparator.comparingInt(LootItem::chance)).toList();
     }
 
     private HashMap<Integer, ItemStack> byChance(){
@@ -93,6 +95,7 @@ public class NewLootTable {
      */
     public void addItem(ItemStack item, int chance){
         String name = item.hasItemMeta() && item.getItemMeta().hasDisplayName() ? ChatColor.stripColor(item.getItemMeta().getDisplayName()) : item.getType().name();
+
         itemTable.put(name, new LootItem(item, chance));
     }
 
@@ -121,6 +124,7 @@ public class NewLootTable {
             int chance = itemTable.get(name).chance();
             plugin.tables.getConfig().set(path + "." + name + ".item",item);
             plugin.tables.getConfig().set(path + "." + name + ".chance",chance);
+            plugin.tables.getConfig().set(path + "." + name + ".min-amount",minEntries);
         }
         plugin.tables.saveConfig();
     }
@@ -133,12 +137,17 @@ public class NewLootTable {
         if (!plugin.tables.getConfig().contains(path)) return;
         minEntries = plugin.tables.getConfig().getInt(path + ".min-entries");
         maxRolls = plugin.tables.getConfig().getInt(path + ".max-rolls");
+
         if (maxRolls <= 0) maxRolls = 100;
+
         path+=".items";
+        if (!plugin.tables.getConfig().contains(path)) return;
         Set<String> names = plugin.tables.getConfig().getConfigurationSection(path).getKeys(false);
         for (String name : names){
-            ItemStack item = plugin.tables.getConfig().getItemStack(path + ".item");
-            int chance = plugin.tables.getConfig().getInt(path + ".chance");
+            ItemStack item = plugin.tables.getConfig().getItemStack(path + "." + name + ".item");
+            int chance = plugin.tables.getConfig().getInt(path + "." + name + ".chance");
+            minAmount = plugin.tables.getConfig().getInt(path + "." + name + ".min-amount");
+            if (minAmount < 1) minAmount = 1;
             LootItem lootItem = new LootItem(item, chance);
             itemTable.put(name, lootItem);
         }

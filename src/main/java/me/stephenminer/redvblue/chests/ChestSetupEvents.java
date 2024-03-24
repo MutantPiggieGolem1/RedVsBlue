@@ -2,6 +2,7 @@ package me.stephenminer.redvblue.chests;
 
 import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.arena.Arena;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -80,8 +81,8 @@ public class ChestSetupEvents implements Listener {
         //dataStr = "table1,table2,etc";
         String dataStr = null;
         for (String str : lore){
-            if (str.contains("data:")){
-                dataStr = str.replace("data:","");
+            if (str.contains("tables:")){
+                dataStr = str.replace("tables:","");
                 break;
             }
         }
@@ -89,6 +90,7 @@ public class ChestSetupEvents implements Listener {
             List<String> tables = new ArrayList<>(List.of(dataStr.split(",")));
             NewLootChest lootChest = new NewLootChest(mat, loc, tables);
             saveToArena(arenaId, lootChest);
+            return lootChest;
         }
         return null;
     }
@@ -126,6 +128,8 @@ public class ChestSetupEvents implements Listener {
                 return true;
             }
         }
+        plugin.arenas.getConfig().set("arenas." + arenaId + ".loot-chests", chests);
+        plugin.arenas.saveConfig();
         return false;
     }
 
@@ -147,6 +151,7 @@ public class ChestSetupEvents implements Listener {
         Inventory inv = event.getClickedInventory();
         LootTableEditor editor = LootTableEditor.sessions.get(player.getUniqueId());
         if (!editor.gui().equals(inv)) return;
+        event.setCancelled(true);
         ItemStack item = event.getCurrentItem();
         if (item == null) return;
         editor.setDefiningChance(true);
@@ -163,7 +168,8 @@ public class ChestSetupEvents implements Listener {
         Inventory inventory = event.getInventory();
         if (!editor.gui().equals(inventory)) return;
         editor.writeContents();
-        if (editor.definingChange()) {
+        player.sendMessage(ChatColor.YELLOW + "Writing contents to loot-table");
+        if (!editor.definingChange()) {
             LootTableEditor.sessions.remove(player.getUniqueId());
             player.sendMessage(ChatColor.YELLOW + "Ended your loot-table editing session");
         }
@@ -179,8 +185,10 @@ public class ChestSetupEvents implements Listener {
             int chance = Integer.parseInt(ChatColor.stripColor(event.getMessage()));
             if (chance < 1) chance = 1;
             if (chance > 100) chance = 100;
-            editor.writeChance(editor.chanceItem(),chance);
-            player.sendMessage(ChatColor.GREEN + "Set chance for " + editor.chanceItem() + " to " + chance);
+            if (editor.chanceItem() != null) {
+                editor.writeChance(editor.chanceItem(), chance);
+                player.sendMessage(ChatColor.GREEN + "Set chance for " + editor.chanceItem() + " to " + chance);
+            }else player.sendMessage(ChatColor.RED + "Something went wrong and the editor cannot remember what item you are setting the chance for");
             editor.setChanceItem(null);
             editor.setDefiningChance(false);
         }catch (Exception e){
