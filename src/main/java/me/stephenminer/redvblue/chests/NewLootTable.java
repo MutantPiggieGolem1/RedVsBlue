@@ -115,12 +115,12 @@ public class NewLootTable {
         path += ".items";
         Set<String> names = itemTable.keySet();
         plugin.tables.getConfig().set(path, null);
-        plugin.saveConfig();
+        plugin.tables.saveConfig();
         for (String name : names){
             ItemStack item = itemTable.get(name).item();
             int chance = itemTable.get(name).chance();
-            plugin.tables.getConfig().set(path + ".item",item);
-            plugin.tables.getConfig().set(path + ".chance",chance);
+            plugin.tables.getConfig().set(path + "." + name + ".item",item);
+            plugin.tables.getConfig().set(path + "." + name + ".chance",chance);
         }
         plugin.tables.saveConfig();
     }

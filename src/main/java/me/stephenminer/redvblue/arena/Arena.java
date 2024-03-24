@@ -26,7 +26,7 @@ public class Arena {
     Game Can Function without a wall, this just removed a graceperiod.
      If a wall is set then the "grace period" where walls are up blocking teams will be active.
      **/
-    private Wall wall;
+    private List<Wall> walls;
     private final Location redSpawn;
     private final Location blueSpawn;
     private final Location lobby;
@@ -69,6 +69,7 @@ public class Arena {
         this.lobby = lobby;
         this.redSpawn = redSpawn;
         this.blueSpawn = blueSpawn;
+        this.walls = new ArrayList<>();
         createBoard();
         offline = new HashMap<>();
         players = new ArrayList<>();
@@ -97,7 +98,7 @@ public class Arena {
             player.getInventory().clear();
             player.setGameMode(GameMode.SURVIVAL);
             if (!starting) checkStart();
-        }else if (wall != null && !wall.isFallen()){
+        }else if (!wallsFallen()){
             player.getActivePotionEffects().clear();
             players.add(player.getUniqueId());
             Team team = findOpenTeam();
@@ -125,6 +126,13 @@ public class Arena {
 
     }
 
+
+    public boolean wallsFallen(){
+       for (Wall wall : walls){
+           if (!wall.isFallen()) return false;
+       }
+       return true;
+    }
 
 
 
@@ -282,7 +290,7 @@ public class Arena {
                 board.clearSlot(DisplaySlot.SIDEBAR);
                 offline.clear();
 
-                wall.destroyWall();
+                walls.forEach(Wall::destroyWall);
                 for (int i = players.size()-1; i >= 0; i--){
                     UUID uuid = players.get(i);
                     Player p = Bukkit.getPlayer(uuid);
@@ -328,7 +336,7 @@ public class Arena {
         }
         offline.clear();
         players.clear();
-        wall.buildWall();
+        walls.forEach(Wall::buildWall);
         if (reset) reset();
     }
 
@@ -337,7 +345,7 @@ public class Arena {
     }
     public void start(boolean setTeam){
         started = true;
-        wall.buildWall();
+        walls.forEach(Wall::buildWall);
         for (NewLootChest lootChest : chests){
             lootChest.loadChest();
 
@@ -421,7 +429,7 @@ public class Arena {
                     broadcast(ChatColor.YELLOW + "" + ((fallTime-time) / 20) + " Seconds Until the Wall drops!");
                 }
                 if (time == fallTime) {
-                    wall.destroyWall();
+                    walls.forEach(Wall::destroyWall);
                     broadcastTitle(ChatColor.DARK_RED + "The Wall Has Fallen");
                     revealTimer();
                     broadcast(Sound.EVENT_RAID_HORN, 244, 1);
@@ -552,7 +560,9 @@ public class Arena {
      */
     public boolean tryEdit(Player player, Block block){
         if (!players.contains(player.getUniqueId())) return false;
-        if (wall != null && !wall.tryEdit(player,block)) return false;
+        for (Wall wall : walls) {
+            if (wall != null && !wall.tryEdit(player, block)) return false;
+        }
         BoundingBox bounds = BoundingBox.of(loc1.clone().add(0.5,0.5,0.5), loc2.clone().add(0.5,0.5,0.5));
         Vector corner1 = block.getLocation().toVector();
         Vector corner2 = corner1.clone().add(new Vector(1,1,1));
@@ -624,12 +634,17 @@ public class Arena {
     public boolean isStarted(){ return started; }
     public boolean hasPlayer(Player player){ return players.contains(player.getUniqueId());}
 
-    public Wall getWall(){
-        return wall;
+    public List<Wall> getWalls(){
+        return walls;
     }
-    public void setWall(Wall wall){
-        this.wall = wall;
+
+    public void addWall(Wall wall){
+        walls.add(wall);
     }
+
+    public void setWalls(List<Wall> walls){ this.walls = walls; }
+
+    public void removeWall(Wall wall){ walls.remove(wall); }
     public void addChests(Collection<NewLootChest> chests){
         this.chests.addAll(chests);
     }
@@ -706,7 +721,7 @@ public class Arena {
             public void run(){
                 blue.setPrefix(ChatColor.BLUE + "Blue-Team: " + ChatColor.WHITE + getAlive((byte) 1));
                 red.setPrefix(ChatColor.RED + "Red-Team: " + ChatColor.WHITE + getAlive((byte) 0));
-                String str = wall.isFallen() ? "Players Revealed In: " : "Walls Fall In: ";
+                String str = wallsFallen() ? "Players Revealed In: " : "Walls Fall In: ";
                 time.setPrefix(ChatColor.YELLOW + str + ChatColor.WHITE + timeString());
                 for (int i = players.size()-1; i >= 0; i--){
                     UUID uuid = players.get(i);

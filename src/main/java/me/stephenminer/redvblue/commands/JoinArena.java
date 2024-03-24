@@ -66,7 +66,7 @@ public class JoinArena implements CommandExecutor, TabCompleter {
             }
             ArenaBuilder builder = new ArenaBuilder(element, plugin);
             builder.loadData();
-            builder.loadWall();
+            builder.loadWalls();
             return builder.build();
         }else{
             Arena max = Arena.arenas.get(0);
@@ -84,7 +84,7 @@ public class JoinArena implements CommandExecutor, TabCompleter {
         }
         if (plugin.arenas.getConfig().contains("arenas." + id)){
             ArenaBuilder builder = new ArenaBuilder(id, plugin);
-            builder.loadWall();
+            builder.loadWalls();
             builder.loadData();
             return builder.build();
         }

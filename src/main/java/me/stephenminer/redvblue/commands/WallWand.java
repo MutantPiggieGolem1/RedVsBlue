@@ -36,7 +36,7 @@ public class WallWand implements CommandExecutor, TabCompleter {
             }
             Items items = new Items();
             World world = player.getWorld();
-            HashMap<Integer, ItemStack> toDrop = player.getInventory().addItem(items.wallWand(args[0]));
+            HashMap<Integer, ItemStack> toDrop = player.getInventory().addItem(items.wallWand(args[0]), items.wallRemover(args[0]));
             for (int num : toDrop.keySet()){
                 world.dropItemNaturally(player.getLocation(),toDrop.get(num));
             }

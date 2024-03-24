@@ -55,6 +55,21 @@ public class Items {
         item.setItemMeta(meta);
         return item;
     }
+    public ItemStack wallRemover(String id){
+        ItemStack item = new ItemStack(Material.STONE_PICKAXE);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(ChatColor.GOLD + "Wall-Remover Wand");
+        List<String> lore = new ArrayList<>();
+        lore.add(ChatColor.ITALIC + "For adding a wall to your arenas!");
+        lore.add(ChatColor.YELLOW + "Left-Click set pos1");
+        lore.add(ChatColor.YELLOW + "Right-Click set pos2");
+        lore.add(ChatColor.AQUA + "Arena: " + id);
+        lore.add(ChatColor.BLACK + "wall-remover");
+        meta.setLore(lore);
+        meta.setUnbreakable(true);
+        item.setItemMeta(meta);
+        return item;
+    }
 
     public ItemStack teamPants(int team){
         ItemStack item = new ItemStack(Material.LEATHER_LEGGINGS);

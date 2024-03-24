@@ -54,7 +54,7 @@ public class PlayerHandling implements Listener {
                         if (!arena.isStarted()) {
                             player.teleport(arena.getLobby());
                             return;
-                        } else if(!arena.getWall().isFallen()){
+                        } else if(!arena.wallsFallen()){
                             Team red = arena.getBoard().getTeam("red");
                             Team blue = arena.getBoard().getTeam("blue");
                             if (red.hasPlayer( player))player.teleport(arena.getRedSpawn());
@@ -106,7 +106,7 @@ public class PlayerHandling implements Listener {
                         if (!arena.isStarted()) {
                             player.teleport(arena.getLobby());
                             return;
-                        } else if(!arena.getWall().isFallen()){
+                        } else if(!arena.wallsFallen()){
                             Team red = arena.getBoard().getTeam("red");
                             Team blue = arena.getBoard().getTeam("blue");
                             if (red.hasPlayer( player))player.teleport(arena.getRedSpawn());
@@ -276,15 +276,18 @@ public class PlayerHandling implements Listener {
             for (int i = Arena.arenas.size()-1; i>=0; i--){
                 Arena arena = Arena.arenas.get(i);
                 if (arena.isInArena(block.getLocation())){
-                    Wall wall = arena.getWall();
                     if (!arena.isStarted()) affected.remove(a);
-                    else if (wall.isOnWall(block.getLocation()) && !wall.isFallen()) affected.remove(a);
-                    chainBlocks(block, arena);
-                    if (!arena.blockMap.containsKey(block.getLocation())){
-                        DataPair pair = new DataPair(block.getType(), block.getBlockData());
-                        arena.blockMap.put(block.getLocation(), pair);
+                    else {
+                        for (Wall wall : arena.getWalls()) {
+                            if (wall.isOnWall(block.getLocation()) && !wall.isFallen()) affected.remove(a);
+                            chainBlocks(block, arena);
+                            if (!arena.blockMap.containsKey(block.getLocation())) {
+                                DataPair pair = new DataPair(block.getType(), block.getBlockData());
+                                arena.blockMap.put(block.getLocation(), pair);
+                            }
+                        }
+                        break;
                     }
-                    break;
                 }else if (arena.isInArena(event.getLocation())){
                     affected.remove(a);
                     break;

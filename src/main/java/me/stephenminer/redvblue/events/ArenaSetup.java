@@ -33,6 +33,8 @@ public class ArenaSetup implements Listener {
 
     private final HashMap<UUID, String> canCreate;
     private final List<UUID> canName;
+
+    private final HashMap<UUID, SPair> canDelete;
     private final RedBlue plugin;
     public ArenaSetup(RedBlue plugin){
         loc1s = new HashMap<>();
@@ -41,6 +43,7 @@ public class ArenaSetup implements Listener {
         wLoc2s = new HashMap<>();
         canName = new ArrayList<>();
         canCreate = new HashMap<>();
+        canDelete = new HashMap<>();
         this.plugin = plugin;
     }
     @EventHandler
@@ -111,6 +114,28 @@ public class ArenaSetup implements Listener {
     }
 
     @EventHandler
+    public void removeWall(BlockBreakEvent event){
+        Player player = event.getPlayer();
+        ItemStack item = event.getPlayer().getInventory().getItemInMainHand();
+        if (plugin.checkLore(item, "wall-remover")){
+            event.setCancelled(true);
+            String id = parseId(item);
+            for (Arena arena : Arena.arenas){
+                if (arena.getId().equals(id)) {
+                    player.sendMessage(ChatColor.RED + "You cannot remove the wall of an active arena");
+                    return;
+                }
+            }
+            String sWall = findWall(id, event.getBlock());
+            SPair pair = new SPair(id, sWall);
+            canDelete.put(player.getUniqueId(),pair);
+            player.sendMessage(ChatColor.GREEN + "Type confirm in chat to confirm deletion");
+        }
+    }
+
+
+
+    @EventHandler
     public void nameArena(AsyncPlayerChatEvent event){
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
@@ -160,8 +185,25 @@ public class ArenaSetup implements Listener {
                 wLoc2s.remove(uuid);
                 player.sendMessage(ChatColor.RED + "Cancelling creation");
             }
-
-
+        }
+    }
+    @EventHandler
+    public void deleteWall(AsyncPlayerChatEvent event){
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
+        if (canDelete.containsKey(uuid)){
+            String msg = ChatColor.stripColor(event.getMessage()).toLowerCase();
+            if (msg.equalsIgnoreCase("confirm")){
+                SPair pair = canDelete.get(uuid);
+                deleteWall(pair.s1(),pair.s2());
+                player.sendMessage(ChatColor.GREEN + "Deleting your wall and remove it from the arena!");
+                canCreate.remove(uuid);
+                wLoc1s.remove(uuid);
+                wLoc2s.remove(uuid);
+            }else if (msg.equalsIgnoreCase("cancel")){
+                canDelete.remove(uuid);
+                player.sendMessage(ChatColor.RED + "Cancelling deletion");
+            }
         }
     }
 
@@ -193,22 +235,37 @@ public class ArenaSetup implements Listener {
         plugin.arenas.saveConfig();
     }
 
+    private String findWall(String arenaId, Block block){
+        List<String> walls = plugin.arenas.getConfig().getStringList(arenaId);
+        for (String sWall : walls){
+            Wall wall = new Wall(sWall);
+            if (wall.isOnWall(block.getLocation())) return sWall;
+        }
+        return null;
+    }
+
     private void createWall(String id, String material, Location loc1, Location loc2){
-        String path = "arenas." + id + ".wall";
+        String path = "arenas." + id + ".walls";
         Material mat = null;
         try{
             mat = Material.matchMaterial(material);
         }catch (Exception ignored){}
         if (mat == null) mat = Material.GLASS;
-        plugin.arenas.getConfig().set(path + ".loc1", plugin.fromBLoc(loc1));
-        plugin.arenas.getConfig().set(path + ".loc2", plugin.fromBLoc(loc2));
-        plugin.arenas.getConfig().set(path + ".type", mat.name());
+        Wall wall = new Wall(mat, loc1, loc2);
+        List<String> walls = plugin.arenas.getConfig().getStringList(path);
+        walls.add(wall.toString());
+        plugin.arenas.getConfig().set(path, walls);
         plugin.arenas.saveConfig();
-        Material finalMat = mat;
-        Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, ()->{
-            Wall wall = new Wall(finalMat, loc1, loc2);
-            wall.buildWall();
-        }, 1);
+        Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, wall::buildWall, 1);
+    }
+    private void deleteWall(String id, String sWall){
+        String path = "arenas." + id + ".walls";
+        List<String> walls = plugin.arenas.getConfig().getStringList(path);
+        walls.remove(sWall);
+        plugin.arenas.getConfig().set(path, walls);
+        plugin.arenas.saveConfig();
+        Wall wall = new Wall(sWall);
+        Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, wall::destroyWall, 1);
     }
 
 
@@ -230,4 +287,6 @@ public class ArenaSetup implements Listener {
         }
         return null;
     }
+
+    public record SPair(String s1, String s2){}
 }

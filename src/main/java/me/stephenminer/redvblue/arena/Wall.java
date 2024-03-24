@@ -1,25 +1,39 @@
 package me.stephenminer.redvblue.arena;
 
+import me.stephenminer.redvblue.RedBlue;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 
 public class Wall {
+    private final RedBlue plugin;
     private Location loc1;
     private Location loc2;
     private Material type;
     private boolean fallen;
 
     public Wall(Material mat, Location loc1, Location loc2){
+        this.plugin = JavaPlugin.getPlugin(RedBlue.class);
         this.type = mat;
         this.loc1 = loc1;
         this.loc2 = loc2;
         fallen = false;
+    }
+
+    /**
+     *
+     * @param str formatted as material/loc1/loc2
+     */
+    public Wall(String str){
+        this.plugin = JavaPlugin.getPlugin(RedBlue.class);
+        fallen = false;
+        loadFromString(str);
     }
 
 
@@ -86,7 +100,29 @@ public class Wall {
         }
     }
 
+    private void loadFromString(String str){
+        String[] split = str.split("/");
+        Material mat = Material.matchMaterial(split[0]);
+        Location loc1 = plugin.fromString(split[1]);
+        Location loc2 = plugin.fromString(split[2]);
+        this.type = mat;
+        this.loc1 = loc1;
+        this.loc2 = loc2;
+    }
 
+
+    /**
+     *
+     * @return String formatted as material/loc1/loc2
+     */
+    @Override
+    public String toString(){
+        return type.name() + "/" +sLocPair();
+    }
+
+    public String sLocPair(){
+        return plugin.fromBLoc(loc1) + "/" + plugin.fromBLoc(loc2);
+    }
 
     public void setFallen(boolean fallen){ this.fallen = fallen; }
     public boolean isFallen(){ return fallen; }
