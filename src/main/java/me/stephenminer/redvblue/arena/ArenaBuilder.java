@@ -1,11 +1,12 @@
 package me.stephenminer.redvblue.arena;
 
 import me.stephenminer.redvblue.RedBlue;
-import me.stephenminer.redvblue.chests.GameChest;
+import me.stephenminer.redvblue.chests.NewLootChest;
 import org.bukkit.Location;
 import org.bukkit.Material;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class ArenaBuilder {
@@ -35,20 +36,15 @@ public class ArenaBuilder {
         name = plugin.arenas.getConfig().getString( base + ".name");
     }
 
-    public Set<GameChest> loadChests(){
-        String path = "arenas." + id + ".chests";
-        Set<GameChest> chests = new HashSet<>();
-        if (plugin.arenas.getConfig().contains(path)) {
-            Set<String> stringLocs = plugin.arenas.getConfig().getConfigurationSection(path).getKeys(false);
-            for (String sLoc : stringLocs) {
-                Location loc = plugin.fromString(sLoc);
-                String chestId = plugin.arenas.getConfig().getString(path + "." + sLoc);
-                Material mat = Material.matchMaterial(plugin.tables.getConfig().getString("tables." + chestId + ".type"));
-                boolean postWall = plugin.tables.getConfig().getBoolean("tables." + chestId + ".post-wall");
-                GameChest chest = new GameChest(loc, mat, chestId);
-                chest.setPostWall(postWall);
-                chests.add(chest);
-            }
+
+    public Set<NewLootChest> loadLootChests(){
+        String path = "arenas." + id + "loot-chests";
+        Set<NewLootChest> chests = new HashSet<>();
+        if (!plugin.arenas.getConfig().contains(path)) return chests;
+        List<String> stringChests  = plugin.arenas.getConfig().getStringList(path);
+        for (String entry : stringChests){
+            NewLootChest lootChest = new NewLootChest(entry);
+            chests.add(lootChest);
         }
         return chests;
     }
@@ -72,7 +68,7 @@ public class ArenaBuilder {
         arena.setWall(wall);
         wall.buildWall();
         arena.setFallTime(getFallTime());
-        arena.addChests(loadChests());
+        arena.addChests(loadLootChests());
         Arena.arenas.add(arena);
         return arena;
     }

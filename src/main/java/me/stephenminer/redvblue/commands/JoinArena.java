@@ -1,8 +1,10 @@
 package me.stephenminer.redvblue.commands;
 
+import me.stephenminer.redvblue.ArenaGui;
 import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.arena.Arena;
 import me.stephenminer.redvblue.arena.ArenaBuilder;
+import me.stephenminer.redvblue.events.ArenaGuiEvents;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -29,14 +31,9 @@ public class JoinArena implements CommandExecutor, TabCompleter {
             }
             int size = args.length;
             if (size < 1){
-                Arena arena = findRandom();
-                if (arena == null){
-                    player.sendMessage(ChatColor.RED + "There are no available arenas for you to join!");
-                    return false;
-                }
-                arena.addPlayer(player);
-                player.sendMessage(ChatColor.GREEN + "Sending you to arena " + arena.getId());
-                return true;
+                ArenaGui gui = new ArenaGui(plugin);
+                gui.display(player);
+                ArenaGuiEvents.IN_GUI.put(player.getUniqueId(),gui);
             }else{
                 String id = ChatColor.stripColor(args[0]);
                 Arena arena = findTarget(id);

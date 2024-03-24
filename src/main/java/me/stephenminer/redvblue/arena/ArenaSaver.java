@@ -1,6 +1,7 @@
 package me.stephenminer.redvblue.arena;
 
 import me.stephenminer.redvblue.RedBlue;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -55,25 +56,24 @@ public class ArenaSaver {
     }
 
     public void loadMap(){
-        int rate = 3000;
         loading = true;
         new BukkitRunnable(){
             private int index = 0;
-            private int countTo = getCountTo(index, rate);
+            private int countTo = getCountTo(index, plugin.loadRate());
             @Override
             public void run(){
                 for (int i = index; i <= countTo; i++){
-                    BlockState state = states.get(index);
-                    state.update(true, false);
+                    BlockState state = states.get(i);
+                    state.update(true);
                 }
                 if (index >= states.size()-1){
-                    arena.broadcast(ChatColor.GOLD + "" + ChatColor.BOLD + "Arena Finished Loading");
+                    plugin.getLogger().info(ChatColor.GOLD + "" + ChatColor.BOLD + "Arena Finished Loading");
                     loading = false;
                     this.cancel();
                     return;
                 }
                 index = countTo;
-                countTo = Math.min(countTo+ rate, states.size()-1);
+                countTo = Math.min(countTo+ plugin.loadRate(), states.size()-1);
             }
         }.runTaskTimer(plugin, 1,1);
     }

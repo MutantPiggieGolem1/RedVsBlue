@@ -88,7 +88,7 @@ public class Items {
         inv.setChestplate(new ItemStack(Material.CHAINMAIL_CHESTPLATE));
         inv.setLeggings(teamPants(team));
         inv.setBoots(teamBoots(team));
-        inv.addItem(new ItemStack(Material.WOODEN_AXE));
+        inv.addItem(new ItemStack(Material.STONE_AXE));
         inv.addItem(new ItemStack(Material.IRON_PICKAXE));
         inv.setItemInOffHand(shield(team));
 

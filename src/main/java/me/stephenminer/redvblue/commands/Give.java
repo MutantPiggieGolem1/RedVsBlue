@@ -27,6 +27,10 @@ public class Give implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){
         if (sender instanceof Player player){
+            if (!player.hasPermission("rvb.commands.give")){
+                player.sendMessage(ChatColor.RED + "No permission to use this command!");
+                return false;
+            }
             int size = args.length;
             if (size >= 1){
                 ItemTranslator translator = new ItemTranslator();

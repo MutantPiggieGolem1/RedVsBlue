@@ -5,14 +5,30 @@ api-version: 1.19
 authors: [ stephenminer, meep ]
 commands:
   arenaWand:
+    permission: "rvb.commands.wand"
   setRerouteLoc:
+    permission: "rvb.commands.reroute"
   wallWand:
+    permission: "rvb.commands.wand"
   joinRvB:
   leaveRvB:
   arena:
+    permission: "rvb.commands.arena"
   reloadRvB:
+    permission: "rvb.commands.reload"
   setWallTime:
+    permission: "rvb.commands.walltime"
   setMinPlayers:
-  lootChest:
+    permission: "rvb.commands.minplayers"
   forceRvb:
+    permission: "rvb.commands.forcestart"
   rvbGive:
+    permission: "rvb.commands.give"
+  rvbRegen:
+    permission: "rvb.commands.regen"
+  endRvb:
+    permission: "rvb.commands.forceend"
+  rvbloot:
+    permission: "rvb.commands.lootchest"
+  rvbchest:
+    permission: "rvb.commands.lootchest"

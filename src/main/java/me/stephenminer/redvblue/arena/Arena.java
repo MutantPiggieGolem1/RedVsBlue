@@ -2,14 +2,10 @@ package me.stephenminer.redvblue.arena;
 
 import me.stephenminer.redvblue.Items;
 import me.stephenminer.redvblue.RedBlue;
-import me.stephenminer.redvblue.chests.GameChest;
+import me.stephenminer.redvblue.chests.NewLootChest;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.block.Container;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.BlockInventoryHolder;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -41,11 +37,12 @@ public class Arena {
     private boolean started;
     private boolean starting;
     private boolean ending;
+    private boolean saved;
 
 
 
     private List<UUID> players;
-    private Set<GameChest> chests;
+    private Set<NewLootChest> chests;
     private HashMap<UUID, Team> offline;
 
     private ArenaSaver saver;
@@ -84,6 +81,10 @@ public class Arena {
 
 
     public void addPlayer(Player player){
+        if (!saved){
+            saver.saveMap();
+            saved = true;
+        }
         if (ending) {
             player.sendMessage(ChatColor.RED + "Game is ending!");
             return;
@@ -96,13 +97,12 @@ public class Arena {
             player.getInventory().clear();
             player.setGameMode(GameMode.SURVIVAL);
             if (!starting) checkStart();
-            return;
         }else if (wall != null && !wall.isFallen()){
             player.getActivePotionEffects().clear();
             players.add(player.getUniqueId());
             Team team = findOpenTeam();
             team.addPlayer(player);
-            player.sendMessage(ChatColor.GOLD + "You are on the " + team.getName() + " team!");
+
             Items items = new Items();
             player.getInventory().clear();
             if (board.getTeam("red").equals(team)) {
@@ -112,6 +112,7 @@ public class Arena {
                 player.teleport(blueSpawn);
                 items.outfitPlayer(player,1);
             }
+            player.sendMessage(ChatColor.GOLD + "You are on the " + team.getName() + " team!");
             player.setGameMode(GameMode.SURVIVAL);
             player.setHealth(20);
             player.setFoodLevel(20);
@@ -133,13 +134,15 @@ public class Arena {
         Team blue = board.getTeam("blue");
 
         players.remove(player.getUniqueId());
-        player.getActivePotionEffects().clear();
+
         if (red.hasPlayer(player)){
             red.removePlayer(player);
         }else if (blue.hasPlayer(player)) blue.removePlayer(player);
         broadcast(ChatColor.RED + player.getDisplayName() + " has quit the game! (" + players.size() + "/" + loadMinPlayers() +" to start)");
-        player.getInventory().clear();
         player.setGameMode(GameMode.SURVIVAL);
+        player.getInventory().clear();
+        player.getActivePotionEffects().clear();
+        removeEffects(player);
         player.setHealth(20);
         player.setFoodLevel(20);
         player.setSaturation(5);
@@ -186,7 +189,6 @@ public class Arena {
                 @Override
                 public void run(){
                     if (saver.isSaving()) {
-                        if (count % 20 == 0)
                         return;
                     }
                     if (count % 20 == 0){
@@ -251,6 +253,7 @@ public class Arena {
         started = false;
         starting = false;
         ending = true;
+        saved = false;
         Arena arena = this;
         Team red = board.getTeam("red");
         Team blue = board.getTeam("blue");
@@ -287,29 +290,36 @@ public class Arena {
                     removePlayer(p);
                 }
                 players.clear();
-                saver.loadMap();
+                reset();
+               // saver.loadMap();
                 new BukkitRunnable(){
                     @Override
                     public void run() {
                         if (!saver.isLoading()){
                             Arena.arenas.remove(arena);
+                            this.cancel();
                         }
                     }
                 }.runTaskTimer(plugin,1,1);
 
-
-
-
-
-                reset();
             }
         }.runTaskLater(plugin, 100);
     }
 
+    private void removeEffects(Player player){
+        for (PotionEffect effect : player.getActivePotionEffects()){
+            player.removePotionEffect(effect.getType());
+        }
+    }
+
     public void forceEnd(){
+        forceEnd(false);
+    }
+    public void forceEnd(boolean reset){
         started = false;
         starting = false;
         ending = true;
+        saved = false;
         Arena.arenas.remove(this);
         for (int i = players.size()-1; i >= 0; i--){
             UUID uuid = players.get(i);
@@ -319,6 +329,7 @@ public class Arena {
         offline.clear();
         players.clear();
         wall.buildWall();
+        if (reset) reset();
     }
 
     public void start(){
@@ -327,8 +338,9 @@ public class Arena {
     public void start(boolean setTeam){
         started = true;
         wall.buildWall();
-        for (GameChest chest : chests){
-            if (!chest.isPostWall()) chest.loadContainer();
+        for (NewLootChest lootChest : chests){
+            lootChest.loadChest();
+
         }
         wallTimer();
         Team red = board.getTeam("red");
@@ -422,9 +434,11 @@ public class Arena {
     }
 
     private void revealTimer(){
+        final int max = 10*60*10;
+        fallTime = max;
         new BukkitRunnable(){
             int count = 0;
-            final int max = 10*60*10;
+
             @Override
             public void run(){
                 if (!started){
@@ -440,8 +454,12 @@ public class Arena {
                             player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 99999, 9));
                         }catch (Exception ignored){}
                     }
+                    this.cancel();
+                    return;
                 }
                 count++;
+                time = count;
+
             }
         }.runTaskTimer(plugin, 1, 1);
     }
@@ -556,6 +574,8 @@ public class Arena {
     }
 
     public void reset(){
+        saver.loadMap();
+        /*
         Set<Location> locSet = blockMap.keySet();
         for (Location loc : locSet){
             DataPair pair = blockMap.get(loc);
@@ -563,6 +583,8 @@ public class Arena {
             block.setType(pair.mat());
             block.setBlockData(pair.data());
         }
+
+         */
     }
 
     public int getAlive(byte team){
@@ -608,10 +630,10 @@ public class Arena {
     public void setWall(Wall wall){
         this.wall = wall;
     }
-    public void addChests(Collection<GameChest> chests){
+    public void addChests(Collection<NewLootChest> chests){
         this.chests.addAll(chests);
     }
-    public Set<GameChest> getGameChests(){ return chests; }
+    public Set<NewLootChest> getGameChests(){ return chests; }
 
     public Location getLoc1(){ return loc1; }
     public Location getLoc2(){ return loc2; }
@@ -664,29 +686,28 @@ public class Arena {
 
 
     private void updateBoard(){
-        Team red = board.getTeam("red");
-        Team blue = board.getTeam("blue");
+        Team blue = board.registerNewTeam("blue-count");
+        blue.addEntry(ChatColor.RED + "" + ChatColor.BLUE);
+
+        Team red = board.registerNewTeam("red-count");
+        red.addEntry(ChatColor.RED + "" + ChatColor.WHITE);
+
+        Team time = board.registerNewTeam("time");
+        time.addEntry(ChatColor.RED + "" + ChatColor.AQUA);
+
+        Objective obj = board.getObjective("teams");
+        obj.getScore(ChatColor.RED + "" + ChatColor.BLUE).setScore(3);
+        obj.getScore(ChatColor.RED + "" + ChatColor.WHITE).setScore(2);
+        obj.getScore(ChatColor.RED + "" + ChatColor.AQUA).setScore(1);
+        Score line = obj.getScore("--------------------");
+        line.setScore(4);
         new BukkitRunnable(){
-            String oldTime = timeString();
-            int oldRed = getAlive((byte) 0);
-            int oldBlue = getAlive((byte) 1);
             @Override
             public void run(){
-                Objective obj = board.getObjective("teams");
-                board.resetScores(ChatColor.BLUE + "Blue-Team: " + ChatColor.WHITE + "" + oldBlue);
-                board.resetScores(ChatColor.RED + "Red-Team: " + ChatColor.WHITE + "" + oldRed);
-                board.resetScores(ChatColor.YELLOW + "Time-Left: " + ChatColor.WHITE + oldTime);
-                oldRed = getAlive((byte) 0);
-                oldBlue = getAlive((byte) 1);
-                oldTime = timeString();
-                Score line = obj.getScore("--------------------");
-                line.setScore(4);
-                Score blue = obj.getScore(ChatColor.BLUE + "Blue-Team: " + ChatColor.WHITE + "" + oldBlue);
-                blue.setScore(3);
-                Score red = obj.getScore(ChatColor.RED + "Red-Team: " + ChatColor.WHITE + "" + oldRed);
-                red.setScore(2);
-                Score time = obj.getScore(ChatColor.YELLOW + "Time-Left: " + ChatColor.WHITE + oldTime);
-                time.setScore(1);
+                blue.setPrefix(ChatColor.BLUE + "Blue-Team: " + ChatColor.WHITE + getAlive((byte) 1));
+                red.setPrefix(ChatColor.RED + "Red-Team: " + ChatColor.WHITE + getAlive((byte) 0));
+                String str = wall.isFallen() ? "Players Revealed In: " : "Walls Fall In: ";
+                time.setPrefix(ChatColor.YELLOW + str + ChatColor.WHITE + timeString());
                 for (int i = players.size()-1; i >= 0; i--){
                     UUID uuid = players.get(i);
                     Player p = Bukkit.getPlayer(uuid);

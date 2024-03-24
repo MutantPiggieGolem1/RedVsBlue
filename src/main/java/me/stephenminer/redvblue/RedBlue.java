@@ -1,19 +1,15 @@
 package me.stephenminer.redvblue;
 
 import me.stephenminer.redvblue.arena.Arena;
-import me.stephenminer.redvblue.chests.GuiEvents;
-import me.stephenminer.redvblue.events.ArenaSetup;
-import me.stephenminer.redvblue.events.LongRifleUse;
-import me.stephenminer.redvblue.events.PlayerHandling;
+import me.stephenminer.redvblue.chests.ChestSetupEvents;
+import me.stephenminer.redvblue.events.*;
 import me.stephenminer.redvblue.commands.*;
-import me.stephenminer.redvblue.events.ThrowingJuiceUse;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
@@ -25,11 +21,12 @@ public final class RedBlue extends JavaPlugin {
     public ConfigFile settings;
     public ConfigFile tables;
     public Location rerouteLoc;
+
     @Override
     public void onEnable() {
         this.arenas = new ConfigFile(this, "arenas");
         this.settings = new ConfigFile(this, "settings");
-        this.tables = new ConfigFile(this, "tables");
+        this.tables = new ConfigFile(this, "loot-tables");
         if (this.settings.getConfig().contains("settings.reroute-loc"))
             rerouteLoc = fromString(this.settings.getConfig().getString("settings.reroute-loc"));
         registerCommands();
@@ -51,10 +48,13 @@ public final class RedBlue extends JavaPlugin {
     private void registerEvents(){
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new PlayerHandling(this), this);
-        pm.registerEvents(new GuiEvents(this), this);
+       // pm.registerEvents(new GuiEvents(this), this);
         pm.registerEvents(new ArenaSetup(this), this);
         pm.registerEvents(new LongRifleUse(this), this);
         pm.registerEvents(new ThrowingJuiceUse(this), this);
+        pm.registerEvents(new ChestSetupEvents(), this);
+        pm.registerEvents(new ArenaGuiEvents(), this);
+
     }
     private void registerCommands(){
         getCommand("setRerouteLoc").setExecutor(new RerouteLoc(this));
@@ -64,6 +64,8 @@ public final class RedBlue extends JavaPlugin {
         getCommand("setMinPlayers").setExecutor(new SetMinPlayers(this));
         getCommand("setWallTime").setExecutor(new SetWallTime(this));
         getCommand("forceRvb").setExecutor(new ForceRvB());
+        getCommand("endRvb").setExecutor(new ForceEnd());
+        getCommand("rvbRegen").setExecutor(new MapRegenCmd());
 
         WallWand wallWand = new WallWand(this);
         getCommand("wallWand").setExecutor(wallWand);
@@ -77,9 +79,13 @@ public final class RedBlue extends JavaPlugin {
         getCommand("joinRvB").setExecutor(joinArena);
         getCommand("joinRvB").setTabCompleter(joinArena);
 
-        LootChest lootChest = new LootChest(this);
-        getCommand("lootChest").setExecutor(lootChest);
-        getCommand("lootChest").setTabCompleter(lootChest);
+        LootChestCmd lootChestCmd = new LootChestCmd();
+        getCommand("rvbchest").setExecutor(lootChestCmd);
+        getCommand("rvbchest").setTabCompleter(lootChestCmd);
+
+        LootTableCmd lootTableCmd = new LootTableCmd();
+        getCommand("rvbloot").setExecutor(lootTableCmd);
+        getCommand("rvbloot").setTabCompleter(lootTableCmd);
 
         Give give = new Give(this);
         getCommand("rvbGive").setExecutor(give);
@@ -140,5 +146,9 @@ public final class RedBlue extends JavaPlugin {
             if (temp.contains(match)) filtered.add(entry);
         }
         return filtered;
+    }
+
+    public int loadRate(){
+        return Math.max(7000,this.settings.getConfig().getInt("settings.map-regen-rate"));
     }
 }
