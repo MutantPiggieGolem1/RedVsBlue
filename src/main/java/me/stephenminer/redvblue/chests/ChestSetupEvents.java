@@ -191,6 +191,7 @@ public class ChestSetupEvents implements Listener {
             }else player.sendMessage(ChatColor.RED + "Something went wrong and the editor cannot remember what item you are setting the chance for");
             editor.setChanceItem(null);
             editor.setDefiningChance(false);
+            return;
         }catch (Exception e){
             e.printStackTrace();
         }

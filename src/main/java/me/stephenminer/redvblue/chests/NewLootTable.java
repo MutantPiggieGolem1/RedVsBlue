@@ -8,10 +8,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
@@ -39,24 +36,31 @@ public class NewLootTable {
         int entries = 0;
         int max = Math.min(inventory.getSize(),maxRolls);
         int min = Math.min(minEntries, inventory.getSize());
+        if (itemTable.size() < 1) return;
         for (int i = 0; i < max; i++){
             if (fillItem(inventory)) entries++;
         }
         while(entries < min){
             if (fillItem(inventory)) entries++;
         }
+
     }
 
     private boolean fillItem(Inventory inventory){
         int roll = ThreadLocalRandom.current().nextInt(100);
         int slot = rollSlot(inventory);
+        List<ItemStack> validItems = new ArrayList<>();
         for (LootItem lootItem : sortedByChance()){
             if (lootItem.chance() <= roll) {
                 ItemStack add = new ItemStack(lootItem.item());
-                add.setAmount(ThreadLocalRandom.current().nextInt(minAmount,lootItem.item().getAmount()+1));
-                inventory.setItem(slot, add);
-                return true;
+                int max = Math.max(minAmount, lootItem.item().getAmount()+1);
+                add.setAmount(ThreadLocalRandom.current().nextInt(minAmount,max));
+                validItems.add(add);
             }
+        }
+        if (validItems.size() > 0) {
+            inventory.setItem(slot, validItems.get(ThreadLocalRandom.current().nextInt(validItems.size())));
+            return true;
         }
         return false;
     }

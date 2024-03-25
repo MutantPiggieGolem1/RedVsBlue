@@ -38,7 +38,7 @@ public class LootTableEditor {
         HashMap<String, LootItem> itemMap = table.getItemMap();
         Set<String> names = table.getItemMap().keySet();
         for (String name : names){
-            gui.addItem(modifyItem(itemMap.get(name).item()));
+            gui.addItem(modifyItem(new ItemStack(itemMap.get(name).item())));
         }
     }
 
@@ -59,7 +59,10 @@ public class LootTableEditor {
             List<String> lore = meta.getLore();
             for (int i = lore.size()-1; i>=0; i--){
                 String entry = lore.get(i);
-                if (entry.contains(ChatColor.YELLOW + "" + ChatColor.BOLD + "Chance: ")) lore.remove(i);
+                if (entry.contains("Chance: ")){
+                    System.out.println(1);
+                    lore.remove(i);
+                }
             }
             meta.setLore(lore);
             item.setItemMeta(meta);
@@ -85,10 +88,10 @@ public class LootTableEditor {
         for (int i = 0; i < gui.getSize(); i++){
             ItemStack item = gui.getItem(i);
             if (item == null) continue;
-            revertItem(item);
-            String name = itemName(item);
+            ItemStack reverted = revertItem(item);
+            String name = itemName(reverted);
             if (!realNames.contains(name)) {
-                table.addItem(item);
+                table.addItem(reverted);
             }
         }
         table.save();
