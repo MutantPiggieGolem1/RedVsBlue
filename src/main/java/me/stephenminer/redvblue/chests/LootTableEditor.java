@@ -9,7 +9,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class LootTableEditor {
     public static HashMap<UUID, LootTableEditor> sessions = new HashMap<>();

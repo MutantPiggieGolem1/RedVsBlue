@@ -4,6 +4,8 @@ import me.stephenminer.redvblue.arena.Arena;
 import me.stephenminer.redvblue.chests.ChestSetupEvents;
 import me.stephenminer.redvblue.events.*;
 import me.stephenminer.redvblue.commands.*;
+import me.stephenminer.redvblue.events.items.LongRifleUse;
+import me.stephenminer.redvblue.events.items.ThrowingJuiceUse;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;

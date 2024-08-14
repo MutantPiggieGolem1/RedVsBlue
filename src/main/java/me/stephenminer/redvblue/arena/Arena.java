@@ -82,13 +82,14 @@ public class Arena {
 
 
     public void addPlayer(Player player){
-        if (!saved){
-            saver.saveMap();
-            saved = true;
-        }
+
         if (ending) {
             player.sendMessage(ChatColor.RED + "Game is ending!");
             return;
+        }
+        if (!saved){
+            saver.saveMap();
+            saved = true;
         }
         if (!started){
             player.getActivePotionEffects().clear();
@@ -167,6 +168,7 @@ public class Arena {
             removePlayer(player);
             return;
         }
+
         player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
         Team red = board.getTeam("red");
         Team blue = board.getTeam("blue");
@@ -196,13 +198,12 @@ public class Arena {
                 int count = 0;
                 @Override
                 public void run(){
-                    if (saver.isSaving()) {
-                        return;
-                    }
                     if (count % 20 == 0){
+
                         broadcast(Sound.ENTITY_CAT_AMBIENT,2,1);
                         broadcast(ChatColor.GOLD + "" + ((max - count) / 20) + " seconds until game start!");
                     }
+
                     if (players.size() < loadMinPlayers()){
                         broadcast(ChatColor.RED + "Not enough players! (" + players.size() + "/" + loadMinPlayers() + ")");
                         broadcast(Sound.ENTITY_CAT_PURREOW, 50, 1);
@@ -211,8 +212,11 @@ public class Arena {
                         return;
                     }
                     if (count >= max){
-                        if (saver.isSaving())broadcast(ChatColor.YELLOW + "Map is saving" );
-                        count-=20;
+                        if (saver.isSaving()){
+                            broadcast(ChatColor.YELLOW + "Failed to start: Map is saving" );
+                            count-= 40;
+                            return;
+                        }
                         start();
                         this.cancel();
                         return;
@@ -261,7 +265,7 @@ public class Arena {
         started = false;
         starting = false;
         ending = true;
-        saved = false;
+
         Arena arena = this;
         Team red = board.getTeam("red");
         Team blue = board.getTeam("blue");
@@ -305,6 +309,7 @@ public class Arena {
                     public void run() {
                         if (!saver.isLoading()){
                             Arena.arenas.remove(arena);
+                            saved = false;
                             this.cancel();
                         }
                     }
@@ -328,7 +333,7 @@ public class Arena {
         starting = false;
         ending = true;
         saved = false;
-        Arena.arenas.remove(this);
+
         for (int i = players.size()-1; i >= 0; i--){
             UUID uuid = players.get(i);
             Player p = Bukkit.getPlayer(uuid);
@@ -338,6 +343,7 @@ public class Arena {
         players.clear();
         walls.forEach(Wall::buildWall);
         if (reset) reset();
+        else Arena.arenas.remove(this);
     }
 
     public void start(){
@@ -584,6 +590,18 @@ public class Arena {
 
     public void reset(){
         saver.loadMap();
+        final Arena arena = this;
+        new BukkitRunnable(){
+
+            @Override
+            public void run(){
+                if (!saver.isLoading()){
+                    Arena.arenas.remove(arena);
+                    this.cancel();
+                    return;
+                }
+            }
+        }.runTaskTimer(plugin,5,1);
         /*
         Set<Location> locSet = blockMap.keySet();
         for (Location loc : locSet){
@@ -702,10 +720,11 @@ public class Arena {
     private void updateBoard(){
         Team blue = board.registerNewTeam("blue-count");
         blue.addEntry(ChatColor.RED + "" + ChatColor.BLUE);
+        Player player;
+
 
         Team red = board.registerNewTeam("red-count");
         red.addEntry(ChatColor.RED + "" + ChatColor.WHITE);
-
         Team time = board.registerNewTeam("time");
         time.addEntry(ChatColor.RED + "" + ChatColor.AQUA);
 

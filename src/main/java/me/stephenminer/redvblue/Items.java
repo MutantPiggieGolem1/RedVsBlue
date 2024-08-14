@@ -165,4 +165,20 @@ public class Items {
         item.setItemMeta(meta);
         return item;
     }
+
+    public ItemStack windScroll(){
+        ItemStack item = new ItemStack( Material.CREEPER_BANNER_PATTERN);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(ChatColor.AQUA + "" + ChatColor.BOLD + "Wind Scroll");
+        List<String> lore = new ArrayList<>();
+        lore.add(ChatColor.ITALIC + "Wind crashes into your face as" );
+        lore.add(ChatColor.ITALIC + "you open the scroll" );
+        lore.add(ChatColor.YELLOW + "Right-Click to Use");
+        lore.add(ChatColor.YELLOW + "8 second cooldown");
+        lore.add(ChatColor.BLACK + "windscroll");
+        meta.setLore(lore);
+        meta.addEnchant(Enchantment.MENDING,1,true);
+        item.setItemMeta(meta);
+        return item;
+    }
 }

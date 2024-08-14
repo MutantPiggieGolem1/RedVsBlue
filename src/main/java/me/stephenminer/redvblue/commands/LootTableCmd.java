@@ -139,7 +139,7 @@ public class LootTableCmd implements CommandExecutor, TabCompleter {
         plugin.tables.saveConfig();
     }
     private void setMaxRolls(String id, int max){
-        plugin.tables.getConfig().set("tables." + id + ".maxRolls",max);
+        plugin.tables.getConfig().set("tables." + id + ".max-rolls",max);
         plugin.tables.saveConfig();
     }
     private void delete(String id){

@@ -1,8 +1,6 @@
 package me.stephenminer.redvblue.chests;
 
-import me.stephenminer.redvblue.Items;
 import me.stephenminer.redvblue.RedBlue;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -10,7 +8,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 public class NewLootTable {
     private final RedBlue plugin;
@@ -33,6 +30,7 @@ public class NewLootTable {
 
     public void populate(Inventory inventory){
         inventory.clear();
+        byChance = byChance();
         int entries = 0;
         int max = Math.min(inventory.getSize(),maxRolls);
         int min = Math.min(minEntries, inventory.getSize());
@@ -40,26 +38,30 @@ public class NewLootTable {
         for (int i = 0; i < max; i++){
             if (fillItem(inventory)) entries++;
         }
-        while(entries < min){
+        while(entries <= min){
             if (fillItem(inventory)) entries++;
         }
 
     }
 
     private boolean fillItem(Inventory inventory){
-        int roll = ThreadLocalRandom.current().nextInt(100);
+        Random random = new Random();
+        int base = 100;
+        int scalar = 10;
+        int roll = random.nextInt(base*scalar);
         int slot = rollSlot(inventory);
         List<ItemStack> validItems = new ArrayList<>();
         for (LootItem lootItem : sortedByChance()){
-            if (lootItem.chance() <= roll) {
-                ItemStack add = new ItemStack(lootItem.item());
-                int max = Math.max(minAmount, lootItem.item().getAmount()+1);
-                add.setAmount(ThreadLocalRandom.current().nextInt(minAmount,max));
-                validItems.add(add);
+            if (roll <= lootItem.chance()) {
+                validItems = byChance.get(lootItem.chance());
+                break;
             }
         }
         if (validItems.size() > 0) {
-            inventory.setItem(slot, validItems.get(ThreadLocalRandom.current().nextInt(validItems.size())));
+            ItemStack add = new ItemStack(validItems.get(random.nextInt(validItems.size())));
+            int max = Math.min(64,Math.max(minAmount+1, add.getAmount()+1));
+            add.setAmount(random.nextInt(minAmount, max));
+            inventory.setItem(slot, add);
             return true;
         }
         return false;
@@ -69,12 +71,20 @@ public class NewLootTable {
         return itemTable.values().stream().sorted(Comparator.comparingInt(LootItem::chance)).toList();
     }
 
-    private HashMap<Integer, ItemStack> byChance(){
-        HashMap<Integer, ItemStack> out = new HashMap<>();
+    private HashMap<Integer, List<ItemStack>> byChance;
+
+    private HashMap<Integer, List<ItemStack>> byChance(){
+        HashMap<Integer, List<ItemStack>> out = new HashMap<>();
         Set<String> names = itemTable.keySet();
         for (String name : names){
             LootItem lootItem = itemTable.get(name);
-            out.put(lootItem.chance(), lootItem.item());
+            if (out.containsKey(lootItem.chance())){
+                out.get(lootItem.chance()).add(lootItem.item());
+            }else {
+                List<ItemStack> itemList = new ArrayList<>();
+                itemList.add(lootItem.item());
+                out.put(lootItem.chance(), itemList);
+            }
         }
         return out;
     }
@@ -128,7 +138,7 @@ public class NewLootTable {
             int chance = itemTable.get(name).chance();
             plugin.tables.getConfig().set(path + "." + name + ".item",item);
             plugin.tables.getConfig().set(path + "." + name + ".chance",chance);
-            plugin.tables.getConfig().set(path + "." + name + ".min-amount",minEntries);
+            plugin.tables.getConfig().set(path + "." + name + ".min-amount",minAmount);
         }
         plugin.tables.saveConfig();
     }
@@ -158,5 +168,6 @@ public class NewLootTable {
     }
 
     public HashMap<String, LootItem> getItemMap(){ return itemTable; }
+
 }
 

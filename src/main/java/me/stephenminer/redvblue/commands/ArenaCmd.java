@@ -1,7 +1,6 @@
 package me.stephenminer.redvblue.commands;
 
 import me.stephenminer.redvblue.RedBlue;
-import me.stephenminer.redvblue.arena.Wall;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -10,7 +9,6 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
-import org.checkerframework.checker.units.qual.A;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,4 +1,4 @@
-package me.stephenminer.redvblue.events;
+package me.stephenminer.redvblue.events.items;
 
 import me.stephenminer.redvblue.RedBlue;
 import net.md_5.bungee.api.ChatMessageType;

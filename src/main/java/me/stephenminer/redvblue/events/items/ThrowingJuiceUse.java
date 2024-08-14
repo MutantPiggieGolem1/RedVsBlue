@@ -1,4 +1,4 @@
-package me.stephenminer.redvblue.events;
+package me.stephenminer.redvblue.events.items;
 
 import me.stephenminer.redvblue.Items;
 import me.stephenminer.redvblue.RedBlue;

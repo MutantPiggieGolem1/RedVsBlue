@@ -1,10 +1,7 @@
 package me.stephenminer.redvblue.arena;
 
 import me.stephenminer.redvblue.RedBlue;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -36,23 +33,32 @@ public class ArenaSaver {
 
 
     public void saveMap(){
-        saving = true;
-        int maxX = maxX();
-        int maxY = maxY();
-        int maxZ = maxZ();
-        int minX = minX();
-        int minY = minY();
-        int minZ = minZ();
         World world = loc1.getWorld();
-        for (int x = minX; x<= maxX; x++){
-            for (int y = minY; y<= maxY; y++){
-                for (int z = minZ; z <= maxZ; z++){
-                    Block block = world.getBlockAt(x,y,z);
-                    states.add(block.getState());
+        saving = true;
+        new BukkitRunnable(){
+            @Override
+            public void run(){
+                int maxX = maxX();
+                int maxY = maxY();
+                int maxZ = maxZ();
+                int minX = minX();
+                int minY = minY();
+                int minZ = minZ();
+                for (int x = minX; x<= maxX; x++){
+                    for (int y = minY; y<= maxY; y++){
+                        for (int z = minZ; z <= maxZ; z++){
+                            Block block = world.getBlockAt(x,y,z);
+                            BlockState state = block.getState();
+                            states.add(state);
+                        }
+                    }
                 }
+                saving = false;
             }
-        }
-        saving = false;
+        }.runTaskAsynchronously(plugin);
+      //  while(saving) continue;
+
+       // Bukkit.broadcastMessage("aaa");
     }
 
     public void loadMap(){

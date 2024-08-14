@@ -121,16 +121,18 @@ public class ChestSetupEvents implements Listener {
 
     private boolean removeFromArena(String arenaId, Location loc){
         List<String> chests = plugin.arenas.getConfig().getStringList("arenas." + arenaId + ".loot-chests");
-        for (int i = chests.size()-1; i>=0; i++){
+        boolean succeed = false;
+        for (int i = chests.size()-1; i>=0; i--){
             String entry = chests.get(i);
             if (entry.contains(plugin.fromBLoc(loc))){
                 chests.remove(i);
-                return true;
+                succeed = true;
+                break;
             }
         }
         plugin.arenas.getConfig().set("arenas." + arenaId + ".loot-chests", chests);
         plugin.arenas.saveConfig();
-        return false;
+        return succeed;
     }
 
 
@@ -184,7 +186,6 @@ public class ChestSetupEvents implements Listener {
         try {
             int chance = Integer.parseInt(ChatColor.stripColor(event.getMessage()));
             if (chance < 1) chance = 1;
-            if (chance > 100) chance = 100;
             if (editor.chanceItem() != null) {
                 editor.writeChance(editor.chanceItem(), chance);
                 player.sendMessage(ChatColor.GREEN + "Set chance for " + editor.chanceItem() + " to " + chance);
@@ -195,6 +196,12 @@ public class ChestSetupEvents implements Listener {
         }catch (Exception e){
             e.printStackTrace();
         }
-        player.sendMessage(ChatColor.RED + "Try again. The number you input must be in integer form, from 1-100");
+        player.sendMessage(ChatColor.RED + "Try again. The number you input must be in integer form, from 1-1000");
+    }
+
+    @EventHandler(ignoreCancelled = false)
+    public void blockGlitch(BlockPlaceEvent event){
+        if (!event.isCancelled()) return;
+        Block block = event.getBlock();
     }
 }
