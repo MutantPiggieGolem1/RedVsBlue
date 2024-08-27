@@ -61,7 +61,7 @@ public final class RedBlue extends JavaPlugin {
     private void registerCommands(){
         getCommand("setRerouteLoc").setExecutor(new RerouteLoc(this));
         getCommand("arenaWand").setExecutor(new ArenaWand());
-        getCommand("leaveRvB").setExecutor(new LeaveArena(this));
+        getCommand("leaveRvB").setExecutor(new LeaveArena());
         getCommand("reloadRvB").setExecutor(new Reload(this));
         getCommand("setMinPlayers").setExecutor(new SetMinPlayers(this));
         getCommand("setWallTime").setExecutor(new SetWallTime(this));

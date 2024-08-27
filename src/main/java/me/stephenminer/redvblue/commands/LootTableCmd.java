@@ -1,7 +1,6 @@
 package me.stephenminer.redvblue.commands;
 
 import me.stephenminer.redvblue.RedBlue;
-import me.stephenminer.redvblue.chests.LootItem;
 import me.stephenminer.redvblue.chests.LootTableEditor;
 import me.stephenminer.redvblue.chests.NewLootTable;
 import org.bukkit.ChatColor;
@@ -12,7 +11,6 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.sql.Array;
 import java.util.*;
 
 public class LootTableCmd implements CommandExecutor, TabCompleter {
@@ -21,9 +19,6 @@ public class LootTableCmd implements CommandExecutor, TabCompleter {
     public LootTableCmd(){
         this.plugin = JavaPlugin.getPlugin(RedBlue.class);
     }
-
-
-
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){
@@ -178,9 +173,4 @@ public class LootTableCmd implements CommandExecutor, TabCompleter {
         out.add("[integer]");
         return out;
     }
-
-
-
-
-
 }

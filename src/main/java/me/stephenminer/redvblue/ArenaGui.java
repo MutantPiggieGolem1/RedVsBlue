@@ -31,11 +31,8 @@ public class ArenaGui {
         }
     }
 
-
-
-
     private void update(){
-        new BukkitRunnable(){
+        new BukkitRunnable() {
             @Override
             public void run(){
                 if (inv.getViewers().isEmpty()) {

@@ -1,35 +1,32 @@
 package me.stephenminer.redvblue.events.items;
 
-import me.stephenminer.redvblue.Items;
-import me.stephenminer.redvblue.RedBlue;
-import me.stephenminer.redvblue.arena.Arena;
-import org.bukkit.*;
-import org.bukkit.block.Block;
+import java.util.Collection;
+import java.util.List;
+
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scoreboard.Team;
-import org.bukkit.util.BoundingBox;
-import org.bukkit.util.Vector;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import me.stephenminer.redvblue.Items;
+import me.stephenminer.redvblue.RedBlue;
+import me.stephenminer.redvblue.arena.Arena;
 
 public class ThrowingJuiceUse implements Listener {
     private final RedBlue plugin;
     public ThrowingJuiceUse(RedBlue plugin){
         this.plugin = plugin;
     }
-
-
 
     @EventHandler
     public void throwJuice(PlayerInteractEvent event){
@@ -65,67 +62,41 @@ public class ThrowingJuiceUse implements Listener {
     }
 
     private void shootBeam(Player shooter, ItemStack item){
-        int beamLength = 100;
-        Arena arenaIn = Arena.arenas.stream().filter(arena->arena.hasPlayer(shooter)).findAny().orElse(null);
-        boolean hitAnything = false;
-        Location loc = shooter.getEyeLocation();
-        Vector dir = shooter.getLocation().getDirection();
-        World world = loc.getWorld();
-        for (int i = 0; i < beamLength; i++){
-
-            world.spawnParticle(Particle.HEART,loc,1);
-            if (checkCollision(shooter,arenaIn,loc)){
-                hitAnything=true;
-                updateUses(item);
-                return;
-            }
-            loc.add(dir);
-        }
-        if (hitAnything) updateUses(item);
-
-    }
-
-    private boolean checkCollision(Player shooter, Arena arena, Location loc){
-        Vector position = loc.toVector();
-        Vector min = position.clone().subtract(new Vector(0.25,0.25,0.25));
-        Vector max = position.clone().add(new Vector(0.25,0.25,0.25));
-        BoundingBox bounds = BoundingBox.of(min, max);
-
-        Block block = loc.getBlock();
-        if (block.getType().isSolid() && block.getBoundingBox().overlaps(bounds)){
-            return onHit(shooter, arena, loc);
-        }
-        World world = loc.getWorld();
-        Collection<Entity> near = world.getNearbyEntities(loc,1,1,1);
-        for (Entity e : near){
-            if (e.equals(shooter)) continue;
-            if (e.getBoundingBox().overlaps(bounds)){
-                return onHit(shooter, arena,e.getLocation());
+        World world = shooter.getWorld();
+        var eyeLoc = shooter.getEyeLocation();
+        var res = world.rayTraceEntities(eyeLoc, eyeLoc.getDirection(), 100, 0.5);
+        if (res == null) {
+            world.spawnParticle(Particle.ASH, eyeLoc, 15);
+            return;
+        } else {
+            while (eyeLoc.toVector().distanceSquared(res.getHitPosition()) > 1.5) {
+                eyeLoc.add(eyeLoc.getDirection().normalize());
+                world.spawnParticle(Particle.HEART, eyeLoc, 5);
             }
         }
-        return false;
+        if (onHit(shooter, Arena.arenaOf(shooter).orElseThrow(), res.getHitPosition().toLocation(world)))
+            updateUses(item);
     }
 
     private boolean onHit(Player shooter, Arena arena, Location hitLoc){
         double radius = 1.5;
         boolean anyHit = false;
-        Collection<Entity> near = hitLoc.getWorld().getNearbyEntities(hitLoc,radius,radius,radius).stream().filter(e->e instanceof Player).toList();
+        Collection<Entity> near = hitLoc.getWorld().getNearbyEntities(hitLoc,radius,radius,radius, e->e instanceof Player);
         for (Entity e : near){
             Player player = (Player) e;
             if (teamsMatch(arena,shooter,player)){
                 anyHit = true;
-                player.addPotionEffect(new PotionEffect(PotionEffectType.HEAL,1,0));
+                player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,1,0));
             }
         }
         return anyHit;
     }
 
-    private boolean teamsMatch(Arena arena, Player shooter, Player hit){
-        if (arena != null && arena.hasPlayer(shooter) && arena.hasPlayer(hit)){
-            Team red = arena.red();
-            Team blue = arena.blue();
-            if (red.hasPlayer(shooter) && red.hasPlayer(hit)) return true;
-            if (blue.hasPlayer(shooter) && blue.hasPlayer( hit)) return true;
+    private boolean teamsMatch(Arena arena, Player shooter, Player target){
+        if (arena != null && arena.hasPlayer(shooter) && arena.hasPlayer(target)){
+            var sb = shooter.getScoreboard();
+            assert sb == target.getScoreboard();
+            return sb.getEntryTeam(shooter.getName()) == sb.getEntryTeam(target.getName());
         }
         return false;
     }

@@ -1,8 +1,8 @@
 name: RedvBlue
 version: '${project.version}'
 main: me.stephenminer.redvblue.RedBlue
-api-version: 1.19
-authors: [ stephenminer, meep ]
+api-version: 1.21
+authors: [ stephenminer, meep, compewper ]
 commands:
   arenaWand:
     permission: "rvb.commands.wand"

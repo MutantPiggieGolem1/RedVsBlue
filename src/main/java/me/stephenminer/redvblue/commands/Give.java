@@ -1,7 +1,6 @@
 package me.stephenminer.redvblue.commands;
 
 import me.stephenminer.redvblue.ItemTranslator;
-import me.stephenminer.redvblue.Items;
 import me.stephenminer.redvblue.RedBlue;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -11,10 +10,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.checkerframework.checker.units.qual.A;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class Give implements CommandExecutor, TabCompleter {
@@ -22,7 +19,6 @@ public class Give implements CommandExecutor, TabCompleter {
     public Give(RedBlue plugin){
         this.plugin = plugin;
     }
-
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){
@@ -72,8 +68,6 @@ public class Give implements CommandExecutor, TabCompleter {
         return null;
     }
 
-
-
     private List<String> itemIds(String match){
         List<String> ids = new ArrayList<>();
         ids.add("longrifle");
@@ -87,8 +81,8 @@ public class Give implements CommandExecutor, TabCompleter {
             names.add(player.getName());
         }
         return plugin.filter(names, match);
-
     }
+    
     private List<String> nums(){
         List<String> nums = new ArrayList<>();
         nums.add("[integer here]");

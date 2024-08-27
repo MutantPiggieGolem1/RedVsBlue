@@ -1,20 +1,21 @@
 package me.stephenminer.redvblue.events.items;
 
-import me.stephenminer.redvblue.RedBlue;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import me.stephenminer.redvblue.RedBlue;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 
 public class WindScrollUse {
     private final RedBlue plugin;
@@ -25,19 +26,21 @@ public class WindScrollUse {
         cooldowns = new ArrayList<>();
     }
 
-
-
-
     @EventHandler
-    public void useScroll(PlayerInteractEvent event){
-
+    public void useScroll(PlayerInteractEvent event) {
+        if (onCooldown(event.getPlayer())) return;
+        var eyeLoc = event.getPlayer().getEyeLocation();
+        var res = event.getPlayer().getWorld().rayTraceEntities(eyeLoc, eyeLoc.getDirection(), 20, 0.3);
+        if (res != null)
+            res.getHitEntity().setVelocity(eyeLoc.getDirection().multiply(-5).add(new Vector(0, 2, 0)));
+        runCooldown(event.getPlayer(), 50);
     }
 
     private boolean onCooldown(Player player){
         if (cooldowns.contains(player.getUniqueId())){
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR,new TextComponent(ChatColor.RED + "Wind Scroll on cooldown!"));
             return true;
-        }else return false;
+        } else return false;
     }
 
     private void runCooldown(Player player, int duration){

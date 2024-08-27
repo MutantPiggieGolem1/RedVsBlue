@@ -1,8 +1,10 @@
 package me.stephenminer.redvblue.events;
 
-import me.stephenminer.redvblue.RedBlue;
-import me.stephenminer.redvblue.arena.Arena;
-import me.stephenminer.redvblue.arena.Wall;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -13,16 +15,16 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.util.BoundingBox;
-import org.bukkit.util.Vector;
 
-import java.util.*;
+import me.stephenminer.redvblue.BlockRange;
+import me.stephenminer.redvblue.RedBlue;
+import me.stephenminer.redvblue.arena.Arena;
+import me.stephenminer.redvblue.arena.Wall;
 
 public class ArenaSetup implements Listener {
     private final HashMap<UUID, Location> loc1s;
@@ -243,7 +245,7 @@ public class ArenaSetup implements Listener {
         String path = "arenas." + arenaId + ".walls";
         List<String> walls = plugin.arenas.getConfig().getStringList(path);
         for (String sWall : walls){
-            Wall wall = new Wall(sWall);
+            Wall wall = Wall.fromString(plugin.getServer(), sWall);
             if (wall.isOnWall(block.getLocation())) return sWall;
         }
         return null;
@@ -256,7 +258,7 @@ public class ArenaSetup implements Listener {
             mat = Material.matchMaterial(material);
         }catch (Exception ignored){}
         if (mat == null) mat = Material.GLASS;
-        Wall wall = new Wall(mat, loc1, loc2);
+        Wall wall = new Wall(mat, BlockRange.fromLocations(loc1, loc2));
         List<String> walls = plugin.arenas.getConfig().getStringList(path);
         walls.add(wall.toString());
         plugin.arenas.getConfig().set(path, walls);
@@ -269,7 +271,7 @@ public class ArenaSetup implements Listener {
         walls.remove(sWall);
         plugin.arenas.getConfig().set(path, walls);
         plugin.arenas.saveConfig();
-        Wall wall = new Wall(sWall);
+        Wall wall = Wall.fromString(plugin.getServer(), sWall);
         Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, wall::destroyWall, 1);
     }
 

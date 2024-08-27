@@ -1,26 +1,25 @@
 package me.stephenminer.redvblue;
 
-import org.bukkit.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+
+import org.bukkit.ChatColor;
+import org.bukkit.Color;
+import org.bukkit.DyeColor;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.block.Banner;
-import org.bukkit.block.BlockState;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
-import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.checkerframework.checker.units.qual.A;
-
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class Items {
     public static NamespacedKey USES = new NamespacedKey(JavaPlugin.getPlugin(RedBlue.class),"rbuses");
@@ -82,7 +81,7 @@ public class Items {
         ItemStack item = new ItemStack(Material.LEATHER_BOOTS);
         LeatherArmorMeta meta = (LeatherArmorMeta) item.getItemMeta();
         meta.setColor(team == 0 ? Color.RED : Color.BLUE);
-        meta.addEnchant(Enchantment.PROTECTION_FALL,1,true);
+        meta.addEnchant(Enchantment.FEATHER_FALLING,1,true);
         item.setItemMeta(meta);
         return item;
     }
@@ -160,14 +159,14 @@ public class Items {
         lore.add(ChatColor.YELLOW + "R-Click while shifting: Shoot");
         lore.add(ChatColor.BLACK + "longrifle");
         meta.setLore(lore);
-        meta.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL,4,true);
+        meta.addEnchant(Enchantment.PROTECTION,4,true);
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         item.setItemMeta(meta);
         return item;
     }
 
     public ItemStack windScroll(){
-        ItemStack item = new ItemStack( Material.CREEPER_BANNER_PATTERN);
+        ItemStack item = new ItemStack(Material.CREEPER_BANNER_PATTERN);
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName(ChatColor.AQUA + "" + ChatColor.BOLD + "Wind Scroll");
         List<String> lore = new ArrayList<>();

@@ -1,9 +1,9 @@
 package me.stephenminer.redvblue.arena;
 
+import me.stephenminer.redvblue.BlockRange;
 import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.chests.NewLootChest;
 import org.bukkit.Location;
-import org.bukkit.Material;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -14,8 +14,7 @@ public class ArenaBuilder {
     private final String id;
     private final RedBlue plugin;
 
-    private Location loc1;
-    private Location loc2;
+    private BlockRange arenaBounds;
     private Location lobby;
     private Location blueLoc;
     private Location redLoc;
@@ -29,8 +28,7 @@ public class ArenaBuilder {
 
     public void loadData(){
         String base = "arenas." + id;
-        loc1 = plugin.fromString(plugin.arenas.getConfig().getString(base + ".loc1"));
-        loc2 = plugin.fromString(plugin.arenas.getConfig().getString(base + ".loc2"));
+        arenaBounds = BlockRange.fromString(plugin.getServer(), plugin.arenas.getConfig().getString(base + ".bounds"));
         blueLoc = plugin.fromString(plugin.arenas.getConfig().getString(base + ".blue-spawn"));
         redLoc = plugin.fromString(plugin.arenas.getConfig().getString(base + ".red-spawn"));
         lobby = plugin.fromString(plugin.arenas.getConfig().getString(base + ".lobby"));
@@ -53,7 +51,7 @@ public class ArenaBuilder {
         String base = "arenas." + id + ".walls";
         List<String> sWalls = plugin.arenas.getConfig().getStringList(base);
         List<Wall> walls = new ArrayList<>();
-        sWalls.forEach(str->walls.add(new Wall(str)));
+        sWalls.forEach(str->walls.add(Wall.fromString(plugin.getServer(), str)));
         return walls;
     }
 
@@ -65,7 +63,7 @@ public class ArenaBuilder {
 
     public Arena build(){
         List<Wall> walls = loadWalls();
-        Arena arena = new Arena(id, name, loc1, loc2, redLoc, blueLoc, lobby);
+        Arena arena = new Arena(id, name, arenaBounds, redLoc, blueLoc, lobby);
         arena.setWalls(walls);
         walls.forEach(Wall::buildWall);
         arena.setFallTime(getFallTime());
@@ -73,6 +71,4 @@ public class ArenaBuilder {
         Arena.arenas.add(arena);
         return arena;
     }
-
-
 }

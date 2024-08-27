@@ -1,58 +1,35 @@
 package me.stephenminer.redvblue.arena;
 
-import me.stephenminer.redvblue.RedBlue;
-import org.bukkit.*;
-import org.bukkit.block.Block;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.block.BlockState;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import me.stephenminer.redvblue.RedBlue;
 
 public class ArenaSaver {
     private final RedBlue plugin;
     private final Arena arena;
     private List<BlockState> states;
 
-    private final Location loc1,loc2;
-    private boolean saving;
-    private boolean loading;
+    private boolean saving, loading;
 
     public ArenaSaver(Arena arena){
         this.plugin = RedBlue.getPlugin(RedBlue.class);
         this.arena = arena;
-        this.loc1 = arena.getLoc1();
-        this.loc2 = arena.getLoc2();
         states = new ArrayList<>();
         loading = false;
     }
 
-
-
-
     public void saveMap(){
-        World world = loc1.getWorld();
         saving = true;
         new BukkitRunnable(){
             @Override
             public void run(){
-                int maxX = maxX();
-                int maxY = maxY();
-                int maxZ = maxZ();
-                int minX = minX();
-                int minY = minY();
-                int minZ = minZ();
-                for (int x = minX; x<= maxX; x++){
-                    for (int y = minY; y<= maxY; y++){
-                        for (int z = minZ; z <= maxZ; z++){
-                            Block block = world.getBlockAt(x,y,z);
-                            BlockState state = block.getState();
-                            states.add(state);
-                        }
-                    }
-                }
+                arena.getBounds().forEach((Location l) -> states.add(l.getBlock().getState()));
                 saving = false;
             }
         }.runTaskAsynchronously(plugin);
@@ -91,12 +68,4 @@ public class ArenaSaver {
     public boolean isLoading(){ return loading; }
     public boolean isSaving(){ return saving; }
 
-
-    public int maxX(){ return Math.max(loc1.getBlockX(), loc2.getBlockX()); }
-    public int maxY(){ return Math.max(loc1.getBlockY(),loc2.getBlockY()); }
-    public int maxZ(){ return Math.max(loc1.getBlockZ(), loc2.getBlockZ()); }
-
-    public int minX(){ return Math.min(loc1.getBlockX(), loc2.getBlockX()); }
-    public int minY(){ return Math.min(loc1.getBlockY(),loc2.getBlockY()); }
-    public int minZ(){ return Math.min(loc1.getBlockZ(), loc2.getBlockZ()); }
 }

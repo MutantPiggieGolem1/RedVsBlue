@@ -13,7 +13,7 @@ public class NewLootTable {
     private final RedBlue plugin;
     private final String id;
 
-    private int minEntries, maxRolls, maxAmount,minAmount;
+    private int minEntries, maxRolls, maxAmount, minAmount;
     /**
      * String keys should only be item names associated with the LootItem entry;
      */
@@ -25,8 +25,6 @@ public class NewLootTable {
         itemTable = new HashMap<>();
         load();
     }
-
-
 
     public void populate(Inventory inventory){
         inventory.clear();

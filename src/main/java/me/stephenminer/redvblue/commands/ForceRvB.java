@@ -8,7 +8,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public class ForceRvB implements CommandExecutor {
-
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){
         if (sender instanceof Player player){
@@ -16,7 +15,7 @@ public class ForceRvB implements CommandExecutor {
                 player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
                 return false;
             }
-            Arena arena = arenaIn(player);
+            Arena arena = Arena.arenaOf(player).orElse(null);
             boolean setTeams = false;
             if (args.length > 0) setTeams = ChatColor.stripColor(args[0]).equalsIgnoreCase(("setTeams"));
             if (arena != null){
@@ -24,20 +23,9 @@ public class ForceRvB implements CommandExecutor {
                     arena.start();
                     player.sendMessage(ChatColor.GREEN + "Force-Starting arena");
                     return true;
-                }else player.sendMessage(ChatColor.RED + "You cannot start an arena that has already started!");
-            }else player.sendMessage(ChatColor.RED + "You are not in an arena!");
-        }else sender.sendMessage(ChatColor.RED + "You must be a player to use this command!");
+                } else player.sendMessage(ChatColor.RED + "You cannot start an arena that has already started!");
+            } else player.sendMessage(ChatColor.RED + "You are not in an arena!");
+        } else sender.sendMessage(ChatColor.RED + "You must be a player to use this command!");
         return false;
-    }
-
-
-
-
-    private Arena arenaIn(Player player){
-        for (int i = Arena.arenas.size()-1; i>=0; i--){
-            Arena arena = Arena.arenas.get(i);
-            if (arena.hasPlayer(player)) return arena;
-        }
-        return null;
     }
 }

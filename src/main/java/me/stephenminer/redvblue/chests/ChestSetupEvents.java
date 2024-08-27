@@ -1,8 +1,9 @@
 package me.stephenminer.redvblue.chests;
 
-import me.stephenminer.redvblue.RedBlue;
-import me.stephenminer.redvblue.arena.Arena;
-import org.bukkit.Bukkit;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -17,15 +18,12 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import me.stephenminer.redvblue.RedBlue;
+import me.stephenminer.redvblue.arena.Arena;
 
 public class ChestSetupEvents implements Listener {
     private final RedBlue plugin;

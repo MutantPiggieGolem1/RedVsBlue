@@ -66,12 +66,12 @@ public class LongRifleUse implements Listener {
             public void run() {
                 if (!player.isOnline() || player.isDead() || !player.isSneaking()){
                     this.cancel();
-                    if (player.isOnline()) player.removePotionEffect(PotionEffectType.SLOW);
+                    if (player.isOnline()) player.removePotionEffect(PotionEffectType.SLOWNESS);
                 }
                 if (plugin.checkLore(main,"longrifle")){
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW,5,5));
+                    player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS,5,5));
                 }else{
-                    player.removePotionEffect(PotionEffectType.SLOW);
+                    player.removePotionEffect(PotionEffectType.SLOWNESS);
                     this.cancel();
                     return;
                 }
@@ -88,10 +88,6 @@ public class LongRifleUse implements Listener {
     public void onWorldChange(PlayerChangedWorldEvent event){
         cooldown.remove(event.getPlayer().getUniqueId());
     }
-
-
-
-
 
     private boolean checkAndTakeAmmo(Player player){
         ItemStack powder = null;
@@ -128,7 +124,7 @@ public class LongRifleUse implements Listener {
                     this.cancel();
                     return;
                 }
-                world.spawnParticle(Particle.REDSTONE,arrow.getLocation(),1,new Particle.DustOptions(Color.AQUA,1));
+                world.spawnParticle(Particle.DUST,arrow.getLocation(),1,new Particle.DustOptions(Color.AQUA,1));
             }
         }.runTaskTimer(plugin,0,1);
         World world = shooter.getWorld();

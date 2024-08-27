@@ -1,31 +1,45 @@
 package me.stephenminer.redvblue.events;
 
-import me.stephenminer.redvblue.RedBlue;
-import me.stephenminer.redvblue.arena.Arena;
-import me.stephenminer.redvblue.arena.DataPair;
-import me.stephenminer.redvblue.arena.Wall;
-import org.bukkit.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Bed;
-import org.bukkit.entity.*;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.FallingBlock;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.*;
-import org.bukkit.event.entity.*;
-import org.bukkit.event.player.PlayerBedEnterEvent;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockBurnEvent;
+import org.bukkit.event.block.BlockFadeEvent;
+import org.bukkit.event.block.BlockFromToEvent;
+import org.bukkit.event.block.BlockPhysicsEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scoreboard.Team;
 
-import javax.xml.crypto.Data;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import me.stephenminer.redvblue.RedBlue;
+import me.stephenminer.redvblue.arena.Arena;
+import me.stephenminer.redvblue.arena.DataPair;
+import me.stephenminer.redvblue.arena.Wall;
 
 public class PlayerHandling implements Listener {
     private final RedBlue plugin;
@@ -43,33 +57,25 @@ public class PlayerHandling implements Listener {
 
     @EventHandler
     public void stopLethal(EntityDamageEvent event){
-        if (event.getEntity() instanceof Player player){
+        if (event.getEntity() instanceof Player player) {
             if (event.getCause() == EntityDamageEvent.DamageCause.ENTITY_ATTACK) return;
-            for (int i = Arena.arenas.size()-1; i>=0; i--){
-                Arena arena = Arena.arenas.get(i);
-                if (arena.hasPlayer(player)){
-                    double health = player.getHealth() - event.getFinalDamage();
-                    if (health <= 0){
-                        event.setCancelled(true);
-                        if (!arena.isStarted()) {
-                            player.teleport(arena.getLobby());
-                            return;
-                        } else if(!arena.wallsFallen()){
-                            Team red = arena.getBoard().getTeam("red");
-                            Team blue = arena.getBoard().getTeam("blue");
-                            if (red.hasPlayer( player))player.teleport(arena.getRedSpawn());
-                            else if (blue.hasPlayer(player)) player.teleport(arena.getBlueSpawn());
-                            return;
-                        }
-                        player.setGameMode(GameMode.SPECTATOR);
-                        arena.broadcast(ChatColor.GOLD + "" + ChatColor.BOLD + "NOTICE: " + ChatColor.WHITE + player.getName() + " has been eliminated!");
-                        player.sendMessage(ChatColor.RED + "You have been eliminated");
-                        player.sendMessage(ChatColor.GOLD + "You may spectate or do /leaveRvB if you wish to leave!");
-                        Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, arena::checkEnding, 5);
-                        return;
-                    }
+            Arena arena = Arena.arenaOf(player).orElseThrow();
+            double health = player.getHealth() - event.getFinalDamage();
+            if (health <= 0){
+                event.setCancelled(true);
+                if (!arena.isStarted()) {
+                    player.teleport(arena.getLobby());
+                    return;
+                } else if(!arena.hasWallFallen()){
+                    player.teleport(arena.getSpawnFor(player));
+                    return;
                 }
-
+                player.setGameMode(GameMode.SPECTATOR);
+                arena.broadcast(ChatColor.GOLD + "" + ChatColor.BOLD + "NOTICE: " + ChatColor.WHITE + player.getName() + " has been eliminated!");
+                player.sendMessage(ChatColor.RED + "You have been eliminated");
+                player.sendMessage(ChatColor.GOLD + "You may spectate or do /leaveRvB if you wish to leave!");
+                Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, arena::checkEnding, 5);
+                return;
             }
         }
     }
@@ -78,21 +84,16 @@ public class PlayerHandling implements Listener {
         Player player = event.getPlayer();
         if (!event.hasBlock()) return;
         Block block = event.getClickedBlock();
-        if (block.getBlockData() instanceof Bed) {
-            for (int i = Arena.arenas.size() - 1; i >= 0; i--) {
-                Arena arena = Arena.arenas.get(i);
-                if (arena.hasPlayer(player)){
-                    event.setCancelled(true);
-                    player.sendMessage(ChatColor.RED + "No Time for Sleep!");
-                    return;
-                }
+        if (!(block.getBlockData() instanceof Bed)) return;
+        for (int i = Arena.arenas.size() - 1; i >= 0; i--) {
+            Arena arena = Arena.arenas.get(i);
+            if (arena.hasPlayer(player)){
+                event.setCancelled(true);
+                player.sendMessage(ChatColor.RED + "No Time for Sleep!");
+                return;
             }
         }
     }
-
-
-
-
 
     @EventHandler
     public void stopPLethal(EntityDamageByEntityEvent event){
@@ -105,22 +106,18 @@ public class PlayerHandling implements Listener {
                         event.setCancelled(true);
                         if (!arena.isStarted()) {
                             player.teleport(arena.getLobby());
-                            return;
-                        } else if(!arena.wallsFallen()){
-                            Team red = arena.getBoard().getTeam("red");
-                            Team blue = arena.getBoard().getTeam("blue");
-                            if (red.hasPlayer( player))player.teleport(arena.getRedSpawn());
-                            else if (blue.hasPlayer(player)) player.teleport(arena.getBlueSpawn());
-                            return;
+                        } else if (!arena.hasWallFallen()){
+                            player.teleport(arena.getSpawnFor(player));
+                        } else {
+                            player.sendMessage(ChatColor.RED + "You have been eliminated!");
+                            String msg = ChatColor.GOLD + "" + ChatColor.BOLD + "NOTICE: " + ChatColor.WHITE + player.getName() + " has been eliminated by ";
+                            if (event.getDamager() instanceof LivingEntity living){
+                                msg += living.getName();
+                            }else if (event.getDamager() instanceof Projectile proj && proj.getShooter() instanceof LivingEntity living) msg += living.getName() + "!";
+                            arena.broadcast(msg);
+                            player.setGameMode(GameMode.SPECTATOR);
+                            arena.checkEnding();
                         }
-                        player.sendMessage(ChatColor.RED + "You have been eliminated!");
-                        String msg = ChatColor.GOLD + "" + ChatColor.BOLD + "NOTICE: " + ChatColor.WHITE + player.getName() + " has been eliminated by ";
-                        if (event.getDamager() instanceof LivingEntity living){
-                            msg += living.getName();
-                        }else if (event.getDamager() instanceof Projectile proj && proj.getShooter() instanceof LivingEntity living) msg += living.getName() + "!";
-                        arena.broadcast(msg);
-                        player.setGameMode(GameMode.SPECTATOR);
-                        arena.checkEnding();
                     }
                 }
             }
@@ -561,8 +558,4 @@ public class PlayerHandling implements Listener {
             }
         }
     }
-
-
-
-
 }

@@ -92,12 +92,12 @@ public class ArenaCmd implements CommandExecutor, TabCompleter {
         plugin.arenas.getConfig().set(path, plugin.fromLoc(loc));
         plugin.arenas.saveConfig();
     }
+    
     private void setLobbySpawn(String id, Location loc){
         String path = "arenas." + id + ".lobby";
         plugin.arenas.getConfig().set(path, plugin.fromLoc(loc));
         plugin.arenas.saveConfig();
     }
-
 
     private void setWallType(String id, Material type){
         String path = "arenas." + id + ".wall.type";

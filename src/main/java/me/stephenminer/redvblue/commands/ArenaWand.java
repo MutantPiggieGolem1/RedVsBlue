@@ -1,7 +1,6 @@
 package me.stephenminer.redvblue.commands;
 
 import me.stephenminer.redvblue.Items;
-import me.stephenminer.redvblue.RedBlue;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -13,8 +12,6 @@ import org.bukkit.inventory.ItemStack;
 import java.util.HashMap;
 
 public class ArenaWand implements CommandExecutor {
-
-
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){
         if (sender instanceof Player player){

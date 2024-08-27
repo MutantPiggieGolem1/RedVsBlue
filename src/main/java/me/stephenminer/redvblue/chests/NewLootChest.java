@@ -1,12 +1,11 @@
 package me.stephenminer.redvblue.chests;
 
-import me.stephenminer.redvblue.Items;
-import me.stephenminer.redvblue.RedBlue;
-import net.md_5.bungee.api.chat.hover.content.Item;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Container;
 import org.bukkit.inventory.Inventory;
@@ -14,10 +13,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
+import me.stephenminer.redvblue.RedBlue;
 
 public class NewLootChest {
     private final RedBlue plugin;
