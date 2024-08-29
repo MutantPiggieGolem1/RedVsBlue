@@ -14,7 +14,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -24,6 +23,8 @@ import org.bukkit.potion.PotionEffectType;
 
 import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.arena.Arena;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 
 public class ThrowingJuiceUse implements Listener {
     public static NamespacedKey USES = new NamespacedKey(JavaPlugin.getPlugin(RedBlue.class),"rbuses");
@@ -37,11 +38,13 @@ public class ThrowingJuiceUse implements Listener {
     @EventHandler
     public void throwJuice(PlayerInteractEvent event){
         if (!event.hasItem()) return;
-        if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getAction() != Action.RIGHT_CLICK_AIR) return;
         ItemStack item = event.getItem();
         Player player = event.getPlayer();
         long now = System.currentTimeMillis();
-        if (cooldowns.containsKey(player.getUniqueId()) && cooldowns.get(player.getUniqueId()) > now) return;
+        if (cooldowns.containsKey(player.getUniqueId()) && cooldowns.get(player.getUniqueId()) > now) {
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(net.md_5.bungee.api.ChatColor.AQUA + "Ability on Cooldown!"));
+            return;
+        }
         if (!plugin.checkLore(item,"throwingjuice")) return;
         
         var world = player.getWorld();
