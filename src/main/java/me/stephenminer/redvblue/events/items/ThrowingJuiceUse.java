@@ -67,7 +67,7 @@ public class ThrowingJuiceUse implements Listener {
     private void shootBeam(Player shooter, ItemStack item){
         World world = shooter.getWorld();
         var eyeLoc = shooter.getEyeLocation();
-        var res = world.rayTraceEntities(eyeLoc, eyeLoc.getDirection(), 100, 0.5);
+        var res = world.rayTraceEntities(eyeLoc.clone().add(eyeLoc.getDirection()), eyeLoc.getDirection(), 50, 0.5);
         if (res == null) {
             world.spawnParticle(Particle.ASH, eyeLoc, 15);
             return;
@@ -77,7 +77,8 @@ public class ThrowingJuiceUse implements Listener {
                 world.spawnParticle(Particle.HEART, eyeLoc, 5);
             }
         }
-        if (onHit(shooter, Arena.arenaOf(shooter).orElseThrow(), res.getHitPosition().toLocation(world)))
+        var oa = Arena.arenaOf(shooter);
+        if (!oa.isPresent() || onHit(shooter, oa.orElseThrow(), res.getHitPosition().toLocation(world)))
             updateUses(item);
     }
 
