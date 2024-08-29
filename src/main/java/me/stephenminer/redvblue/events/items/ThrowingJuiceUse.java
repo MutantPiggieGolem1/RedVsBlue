@@ -13,6 +13,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -24,8 +25,7 @@ import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.arena.Arena;
 
 public class ThrowingJuiceUse implements Listener {
-        public static NamespacedKey USES = new NamespacedKey(JavaPlugin.getPlugin(RedBlue.class),"rbuses");
-
+    public static NamespacedKey USES = new NamespacedKey(JavaPlugin.getPlugin(RedBlue.class),"rbuses");
 
     private final RedBlue plugin;
     public ThrowingJuiceUse(RedBlue plugin){
@@ -35,14 +35,13 @@ public class ThrowingJuiceUse implements Listener {
     @EventHandler
     public void throwJuice(PlayerInteractEvent event){
         if (!event.hasItem()) return;
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getAction() != Action.RIGHT_CLICK_AIR) return;
         ItemStack item = event.getItem();
         Player player = event.getPlayer();
-      //  if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getAction() != Action.RIGHT_CLICK_AIR) return;
         if (player.hasCooldown(Material.NETHER_STAR)) return;
-        if (plugin.checkLore(item,"throwingjuice")){
-            shootBeam(player,item);
-            player.setCooldown(Material.NETHER_STAR,10);
-        }
+        if (!plugin.checkLore(item,"throwingjuice")) return;
+        shootBeam(player,item);
+        player.setCooldown(Material.NETHER_STAR,10);
     }
 
     private void updateUses(ItemStack item){
@@ -73,8 +72,8 @@ public class ThrowingJuiceUse implements Listener {
             world.spawnParticle(Particle.ASH, eyeLoc, 15);
             return;
         } else {
-            while (eyeLoc.toVector().distanceSquared(res.getHitPosition()) > 1.5) {
-                eyeLoc.add(eyeLoc.getDirection().normalize());
+            while (eyeLoc.toVector().distanceSquared(res.getHitPosition()) > 2) {
+                eyeLoc = eyeLoc.add(eyeLoc.getDirection().normalize());
                 world.spawnParticle(Particle.HEART, eyeLoc, 5);
             }
         }

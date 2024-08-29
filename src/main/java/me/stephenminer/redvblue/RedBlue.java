@@ -127,15 +127,8 @@ public final class RedBlue extends JavaPlugin {
     public boolean checkLore(ItemStack item, String check) {
         if (item == null)
             return false;
-        if (item.hasItemMeta() && item.getItemMeta().hasLore()) {
-            List<String> lore = item.getItemMeta().getLore();
-            check = check.toLowerCase();
-            for (String entry : lore) {
-                String temp = ChatColor.stripColor(entry).toLowerCase();
-                if (temp.equals(check))
-                    return true;
-            }
-        }
+        if (item.hasItemMeta() && item.getItemMeta().hasLore())
+            return item.getItemMeta().getLore().contains(ChatColor.BLACK + check.toLowerCase());
         return false;
     }
 
