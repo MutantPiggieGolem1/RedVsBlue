@@ -81,6 +81,7 @@ public class ArenaSetup implements Listener {
             }
         }
     }
+    
     @EventHandler
     public void wallWandLocs(PlayerInteractEvent event){
         if (!event.hasItem()) return;

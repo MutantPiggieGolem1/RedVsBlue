@@ -3,9 +3,6 @@ package me.stephenminer.redvblue;
 import org.bukkit.inventory.ItemStack;
 
 public class ItemTranslator {
-
-
-
     public ItemStack fromId(String id){
         Items items = new Items();
         switch (id){

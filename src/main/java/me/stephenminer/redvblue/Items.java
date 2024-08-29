@@ -24,7 +24,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class Items {
     public static NamespacedKey USES = new NamespacedKey(JavaPlugin.getPlugin(RedBlue.class),"rbuses");
 
-    public ItemStack arenaWand(){
+    public ItemStack arenaWand() {
         ItemStack item = new ItemStack(Material.WOODEN_SHOVEL);
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName(ChatColor.GOLD + "Arena Wand");

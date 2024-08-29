@@ -1,11 +1,11 @@
 package me.stephenminer.redvblue;
 
-import me.stephenminer.redvblue.arena.Arena;
-import me.stephenminer.redvblue.chests.ChestSetupEvents;
-import me.stephenminer.redvblue.events.*;
-import me.stephenminer.redvblue.commands.*;
-import me.stephenminer.redvblue.events.items.LongRifleUse;
-import me.stephenminer.redvblue.events.items.ThrowingJuiceUse;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import javax.annotation.Nonnull;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -14,9 +14,29 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import me.stephenminer.redvblue.arena.Arena;
+import me.stephenminer.redvblue.chests.ChestSetupEvents;
+import me.stephenminer.redvblue.commands.ArenaCmd;
+import me.stephenminer.redvblue.commands.ArenaWand;
+import me.stephenminer.redvblue.commands.ForceEnd;
+import me.stephenminer.redvblue.commands.ForceRvB;
+import me.stephenminer.redvblue.commands.Give;
+import me.stephenminer.redvblue.commands.JoinArena;
+import me.stephenminer.redvblue.commands.LeaveArena;
+import me.stephenminer.redvblue.commands.LootChestCmd;
+import me.stephenminer.redvblue.commands.LootTableCmd;
+import me.stephenminer.redvblue.commands.MapRegenCmd;
+import me.stephenminer.redvblue.commands.Reload;
+import me.stephenminer.redvblue.commands.RerouteLoc;
+import me.stephenminer.redvblue.commands.SetMinPlayers;
+import me.stephenminer.redvblue.commands.SetWallTime;
+import me.stephenminer.redvblue.commands.WallWand;
+import me.stephenminer.redvblue.events.ArenaGuiEvents;
+import me.stephenminer.redvblue.events.ArenaSetup;
+import me.stephenminer.redvblue.events.PlayerHandling;
+import me.stephenminer.redvblue.events.items.LongRifleUse;
+import me.stephenminer.redvblue.events.items.ThrowingJuiceUse;
+import me.stephenminer.redvblue.events.items.WindScrollUse;
 
 public final class RedBlue extends JavaPlugin {
     public ConfigFile arenas;
@@ -33,13 +53,11 @@ public final class RedBlue extends JavaPlugin {
             rerouteLoc = fromString(this.settings.getConfig().getString("settings.reroute-loc"));
         registerCommands();
         registerEvents();
-
     }
 
     @Override
     public void onDisable() {
-        for (int i = Arena.arenas.size()-1; i >=0; i--){
-            Arena arena = Arena.arenas.get(i);
+        for (Arena arena : Arena.arenas) {
             arena.reset();
             arena.forceEnd();
         }
@@ -47,18 +65,19 @@ public final class RedBlue extends JavaPlugin {
         this.arenas.saveConfig();
     }
 
-    private void registerEvents(){
+    private void registerEvents() {
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new PlayerHandling(this), this);
-       // pm.registerEvents(new GuiEvents(this), this);
+        // pm.registerEvents(new GuiEvents(this), this);
         pm.registerEvents(new ArenaSetup(this), this);
         pm.registerEvents(new LongRifleUse(this), this);
         pm.registerEvents(new ThrowingJuiceUse(this), this);
+        pm.registerEvents(new WindScrollUse(), this);
         pm.registerEvents(new ChestSetupEvents(), this);
         pm.registerEvents(new ArenaGuiEvents(), this);
-
     }
-    private void registerCommands(){
+
+    private void registerCommands() {
         getCommand("setRerouteLoc").setExecutor(new RerouteLoc(this));
         getCommand("arenaWand").setExecutor(new ArenaWand());
         getCommand("leaveRvB").setExecutor(new LeaveArena());
@@ -92,22 +111,18 @@ public final class RedBlue extends JavaPlugin {
         Give give = new Give(this);
         getCommand("rvbGive").setExecutor(give);
         getCommand("rvbGive").setTabCompleter(give);
-
-
-
-
     }
 
-
-    public String fromBLoc(Location loc){
+    public String fromBLoc(Location loc) {
         return loc.getWorld().getName() + "," + loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ();
     }
-    public String fromLoc(Location loc){
-        return loc.getWorld().getName() + "," + loc.getX() + "," + loc.getY() + "," + loc.getZ() + ',' + loc.getYaw() + "," + loc.getPitch();
+
+    public String fromLoc(Location loc) {
+        return loc.getWorld().getName() + "," + loc.getX() + "," + loc.getY() + "," + loc.getZ() + ',' + loc.getYaw()
+                + "," + loc.getPitch();
     }
 
-
-    public Location fromString(String str){
+    public Location fromString(@Nonnull String str) {
         String[] content = str.split(",");
         String wName = content[0];
         try {
@@ -115,42 +130,46 @@ public final class RedBlue extends JavaPlugin {
             double x = Double.parseDouble(content[1]);
             double y = Double.parseDouble(content[2]);
             double z = Double.parseDouble(content[3]);
-            if (content.length == 6){
+            if (content.length == 6) {
                 float yaw = Float.parseFloat(content[4]);
                 float pitch = Float.parseFloat(content[5]);
-                return new Location(world,x,y,z,yaw,pitch);
-            }else return new Location(world, x, y, z);
-        }catch (Exception e){
+                return new Location(world, x, y, z, yaw, pitch);
+            } else
+                return new Location(world, x, y, z);
+        } catch (Exception e) {
             getLogger().warning(wName + " is not a loaded/existing world!");
             e.printStackTrace();
         }
         return null;
     }
 
-    public boolean checkLore(ItemStack item, String check){
-        if (item == null) return false;
-        if (item.hasItemMeta() && item.getItemMeta().hasLore()){
+    public boolean checkLore(ItemStack item, String check) {
+        if (item == null)
+            return false;
+        if (item.hasItemMeta() && item.getItemMeta().hasLore()) {
             List<String> lore = item.getItemMeta().getLore();
             check = check.toLowerCase();
-            for (String entry : lore){
+            for (String entry : lore) {
                 String temp = ChatColor.stripColor(entry).toLowerCase();
-                if (temp.equals(check)) return true;
+                if (temp.equals(check))
+                    return true;
             }
         }
         return false;
     }
 
-    public List<String> filter(Collection<String> base, String match){
+    public List<String> filter(Collection<String> base, String match) {
         List<String> filtered = new ArrayList<>();
         match = match.toLowerCase();
-        for (String entry : base){
+        for (String entry : base) {
             String temp = ChatColor.stripColor(entry).toLowerCase();
-            if (temp.contains(match)) filtered.add(entry);
+            if (temp.contains(match))
+                filtered.add(entry);
         }
         return filtered;
     }
 
-    public int loadRate(){
-        return Math.max(7000,this.settings.getConfig().getInt("settings.map-regen-rate"));
+    public int loadRate() {
+        return Math.max(7000, this.settings.getConfig().getInt("settings.map-regen-rate"));
     }
 }

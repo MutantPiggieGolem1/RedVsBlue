@@ -18,6 +18,16 @@ import java.util.Set;
 public class ArenaGui {
     private final RedBlue plugin;
     private final Inventory inv;
+
+    private static final ItemStack FILLER;
+    static {
+        ItemStack item = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(" ");
+        item.setItemMeta(meta);
+        FILLER = item;
+    }
+
     public ArenaGui(RedBlue plugin){
         this.plugin = plugin;
         inv = Bukkit.createInventory(null, 54, ChatColor.AQUA + "Arena Selector");
@@ -25,10 +35,7 @@ public class ArenaGui {
     }
 
     private void init(){
-        ItemStack filler = filler();
-        for (int i = 45; i < 54; i++){
-            inv.setItem(i, filler);
-        }
+        for (int i = 45; i < inv.getSize(); i++) inv.setItem(i, FILLER);
     }
 
     private void update(){
@@ -74,7 +81,7 @@ public class ArenaGui {
     private ItemStack arenaIcon(String arenaId){
         Material mat = Material.OAK_SIGN;
         Arena arena = fromId(arenaId);
-        String players =  arena == null ?ChatColor.YELLOW +  "0" : (ChatColor.YELLOW + "" + arena.getPlayers().size());
+        String players =  arena == null ?ChatColor.YELLOW +  "0" : (ChatColor.YELLOW + "" + arena.getPlayerCount());
         players+=" players";
         String startText = arena == null || !arena.isStarted() ? ChatColor.GREEN + "Waiting to start" : ChatColor.YELLOW + "Game Started";
 
@@ -89,14 +96,6 @@ public class ArenaGui {
         item.setItemMeta(meta);
         return item;
     }
-    private ItemStack filler(){
-        ItemStack item = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
-        ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName(" ");
-        item.setItemMeta(meta);
-        return item;
-    }
-
     public void display(Player player){
         player.openInventory(inv);
         update();

@@ -5,10 +5,10 @@ import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.chests.NewLootChest;
 import org.bukkit.Location;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ArenaBuilder {
     private final String id;
@@ -47,12 +47,10 @@ public class ArenaBuilder {
         }
         return chests;
     }
-    public List<Wall> loadWalls(){
+    
+    public Set<Wall> loadWalls(){
         String base = "arenas." + id + ".walls";
-        List<String> sWalls = plugin.arenas.getConfig().getStringList(base);
-        List<Wall> walls = new ArrayList<>();
-        sWalls.forEach(str->walls.add(Wall.fromString(plugin.getServer(), str)));
-        return walls;
+        return plugin.arenas.getConfig().getStringList(base).stream().map((s) -> Wall.fromString(plugin.getServer(), s)).collect(Collectors.toSet());
     }
 
     public int getFallTime(){
@@ -62,8 +60,8 @@ public class ArenaBuilder {
 
 
     public Arena build(){
-        List<Wall> walls = loadWalls();
         Arena arena = new Arena(id, name, arenaBounds, redLoc, blueLoc, lobby);
+        var walls = loadWalls();
         arena.setWalls(walls);
         walls.forEach(Wall::buildWall);
         arena.setFallTime(getFallTime());

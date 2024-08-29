@@ -63,17 +63,13 @@ public class Give implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args){
         int size = args.length;
         if (size == 1) return itemIds(args[0]);
-        if (size == 2) return nums();
+        if (size == 2) return List.of("[integer]");
         if (size == 3) return playerNames(args[2]);
         return null;
     }
 
     private List<String> itemIds(String match){
-        List<String> ids = new ArrayList<>();
-        ids.add("longrifle");
-        ids.add("throwingjuice");
-        ids.add("manapowder");
-        return plugin.filter(ids, match);
+        return plugin.filter(List.of("longrifle","throwingjuice","manapowder","windscroll"), match);
     }
     private List<String> playerNames(String match){
         List<String> names = new ArrayList<>();
@@ -81,11 +77,5 @@ public class Give implements CommandExecutor, TabCompleter {
             names.add(player.getName());
         }
         return plugin.filter(names, match);
-    }
-    
-    private List<String> nums(){
-        List<String> nums = new ArrayList<>();
-        nums.add("[integer here]");
-        return nums;
     }
 }

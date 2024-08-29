@@ -49,7 +49,7 @@ public class Wall {
     public boolean isFallen() { return fallen; }
 
     public static Wall fromString(Server currentServer, String serialized) {
-        String[] segments = serialized.split(", ", 2);
+        String[] segments = serialized.split("#", 2);
         return new Wall(Material.getMaterial(segments[0]), BlockRange.fromString(currentServer, segments[1]));
     }
 
@@ -58,6 +58,6 @@ public class Wall {
      */
     @Override
     public String toString() {
-        return type.name() + "/ " + range.toString();
+        return type.name() + "#" + range.toString();
     }
 }

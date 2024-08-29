@@ -69,10 +69,9 @@ public class JoinArena implements CommandExecutor, TabCompleter {
             builder.loadWalls();
             return builder.build();
         }else{
-            Arena max = Arena.arenas.get(0);
-            for (int i = Arena.arenas.size()-1; i>=0; i--){
-                Arena arena = Arena.arenas.get(i);
-                if (max.size() < arena.size()) max = arena;
+            Arena max = null;
+            for (Arena arena : Arena.arenas) {
+                if (max == null || max.size() < arena.size()) max = arena;
             }
             return max;
         }

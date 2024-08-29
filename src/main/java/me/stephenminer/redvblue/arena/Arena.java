@@ -36,18 +36,32 @@ import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.chests.NewLootChest;
 
 public class Arena {
-    public static List<Arena> arenas = new ArrayList<>();
+    public static Set<Arena> arenas = new HashSet<>();
+    public static Optional<Arena> arenaOf(Player p) {
+        return arenas.stream().filter((a) -> a.hasPlayer(p)).findFirst();
+    }
+    public static Optional<Arena> arenaOf(Location l) {
+        return arenas.stream().filter((a) -> a.hasLocation(l)).findFirst();
+    }
+
     private final RedBlue plugin;
-    private BlockRange arenaBounds;
 
     /**
      * Game Can Function without a wall, this just removed a graceperiod.
      * If a wall is set then the "grace period" where walls are up blocking teams
      * will be active.
      **/
-    private List<Wall> walls;
+    private final BlockRange arenaBounds;
     private final Map<String, Location> spawnLocations;
     private final Location lobby;
+
+    private final Set<UUID> players;
+    private final HashMap<UUID, Team> offline;
+
+    private final Set<Wall> walls;
+    private final Set<NewLootChest> chests;
+    public HashMap<Location, DataPair> blockMap;
+    
     private String id;
     private String name;
     private int fallTime;
@@ -57,14 +71,7 @@ public class Arena {
     private boolean ending;
     private boolean saved;
 
-    private List<UUID> players;
-    private Set<NewLootChest> chests;
-    private HashMap<UUID, Team> offline;
-
     private ArenaSaver saver;
-
-    public HashMap<Location, DataPair> blockMap;
-
     private Scoreboard board;
 
     /**
@@ -85,10 +92,10 @@ public class Arena {
         this.arenaBounds = arenaBounds;
         this.lobby = lobby;
         this.spawnLocations = Map.of("red", redSpawn, "blue", blueSpawn);
-        this.walls = new ArrayList<>();
+        this.walls = new HashSet<>();
         createBoard();
         offline = new HashMap<>();
-        players = new ArrayList<>();
+        players = new HashSet<>();
         blockMap = new HashMap<>();
         chests = new HashSet<>();
         saver = new ArenaSaver(this);
@@ -214,7 +221,6 @@ public class Arena {
                 @Override
                 public void run() {
                     if (count % 20 == 0) {
-
                         broadcast(Sound.ENTITY_CAT_AMBIENT, 2, 1);
                         broadcast(ChatColor.GOLD + "" + ((max - count) / 20) + " seconds until game start!");
                     }
@@ -313,8 +319,7 @@ public class Arena {
                 offline.clear();
 
                 walls.forEach(Wall::destroyWall);
-                for (int i = players.size() - 1; i >= 0; i--) {
-                    UUID uuid = players.get(i);
+                for (UUID uuid : players) {
                     Player p = Bukkit.getPlayer(uuid);
                     if (p == null)
                         continue;
@@ -354,8 +359,7 @@ public class Arena {
         ending = true;
         saved = false;
 
-        for (int i = players.size() - 1; i >= 0; i--) {
-            UUID uuid = players.get(i);
+        for (UUID uuid : players) {
             Player p = Bukkit.getPlayer(uuid);
             removePlayer(p);
         }
@@ -555,24 +559,21 @@ public class Arena {
     }
 
     public void broadcast(String msg) {
-        for (int i = players.size() - 1; i >= 0; i--) {
-            UUID uuid = players.get(i);
+        for (UUID uuid : players) {
             Player p = Bukkit.getPlayer(uuid);
             p.sendMessage(msg);
         }
     }
 
     public void broadcast(Sound sound, float vol, float pitch) {
-        for (int i = players.size() - 1; i >= 0; i--) {
-            UUID uuid = players.get(i);
+        for (UUID uuid : players) {
             Player p = Bukkit.getPlayer(uuid);
             p.playSound(p, sound, vol, pitch);
         }
     }
 
     public void broadcastTitle(String msg) {
-        for (int i = players.size() - 1; i >= 0; i--) {
-            UUID uuid = players.get(i);
+        for (UUID uuid : players) {
             Player p = Bukkit.getPlayer(uuid);
             p.sendTitle(msg, "", 5, 40, 5);
         }
@@ -606,7 +607,7 @@ public class Arena {
             return started;
     }
 
-    public boolean isInArena(Location loc) {
+    public boolean hasLocation(Location loc) {
         Vector corner1 = loc.clone().getBlock().getLocation().toVector();
         Vector corner2 = corner1.clone().add(new Vector(1, 1, 1));
         return arenaBounds.toBoundingBox().overlaps(corner1, corner2);
@@ -707,8 +708,8 @@ public class Arena {
         this.time = time;
     }
 
-    public List<UUID> getPlayers() {
-        return players;
+    public int getPlayerCount() {
+        return players.size();
     }
 
     public boolean isStarted() {
@@ -719,7 +720,7 @@ public class Arena {
         return players.contains(player.getUniqueId());
     }
 
-    public List<Wall> getWalls() {
+    public Set<Wall> getWalls() {
         return walls;
     }
 
@@ -727,12 +728,9 @@ public class Arena {
         walls.add(wall);
     }
 
-    public void setWalls(List<Wall> walls) {
-        this.walls = walls;
-    }
-
-    public void removeWall(Wall wall) {
-        walls.remove(wall);
+    public void setWalls(Set<Wall> walls) {
+        walls.clear();
+        walls.addAll(walls);
     }
 
     public void addChests(Collection<NewLootChest> chests) {
@@ -807,8 +805,7 @@ public class Arena {
                 red.setPrefix(ChatColor.RED + "Red-Team: " + ChatColor.WHITE + getAlive((byte) 0));
                 String str = hasWallFallen() ? "Players Revealed In: " : "Walls Fall In: ";
                 time.setPrefix(ChatColor.YELLOW + str + ChatColor.WHITE + timeString());
-                for (int i = players.size() - 1; i >= 0; i--) {
-                    UUID uuid = players.get(i);
+                for (UUID uuid : players) {
                     Player p = Bukkit.getPlayer(uuid);
                     p.setScoreboard(board);
                 }
@@ -834,7 +831,4 @@ public class Arena {
         return board.getTeam("blue");
     }
 
-    public static Optional<Arena> arenaOf(Player p) {
-        return arenas.stream().filter((a) -> a.hasPlayer(p)).findFirst();
-    }
 }

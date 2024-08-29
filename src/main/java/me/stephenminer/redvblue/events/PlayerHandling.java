@@ -44,7 +44,8 @@ import me.stephenminer.redvblue.arena.Wall;
 public class PlayerHandling implements Listener {
     private final RedBlue plugin;
     private BlockFace[] faces;
-    public PlayerHandling(RedBlue plugin){
+
+    public PlayerHandling(RedBlue plugin) {
         this.plugin = plugin;
         faces = new BlockFace[6];
         faces[0] = BlockFace.EAST;
@@ -56,22 +57,24 @@ public class PlayerHandling implements Listener {
     }
 
     @EventHandler
-    public void stopLethal(EntityDamageEvent event){
+    public void stopLethal(EntityDamageEvent event) {
         if (event.getEntity() instanceof Player player) {
-            if (event.getCause() == EntityDamageEvent.DamageCause.ENTITY_ATTACK) return;
+            if (event.getCause() == EntityDamageEvent.DamageCause.ENTITY_ATTACK)
+                return;
             Arena arena = Arena.arenaOf(player).orElseThrow();
             double health = player.getHealth() - event.getFinalDamage();
-            if (health <= 0){
+            if (health <= 0) {
                 event.setCancelled(true);
                 if (!arena.isStarted()) {
                     player.teleport(arena.getLobby());
                     return;
-                } else if(!arena.hasWallFallen()){
+                } else if (!arena.hasWallFallen()) {
                     player.teleport(arena.getSpawnFor(player));
                     return;
                 }
                 player.setGameMode(GameMode.SPECTATOR);
-                arena.broadcast(ChatColor.GOLD + "" + ChatColor.BOLD + "NOTICE: " + ChatColor.WHITE + player.getName() + " has been eliminated!");
+                arena.broadcast(ChatColor.GOLD + "" + ChatColor.BOLD + "NOTICE: " + ChatColor.WHITE + player.getName()
+                        + " has been eliminated!");
                 player.sendMessage(ChatColor.RED + "You have been eliminated");
                 player.sendMessage(ChatColor.GOLD + "You may spectate or do /leaveRvB if you wish to leave!");
                 Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, arena::checkEnding, 5);
@@ -79,184 +82,166 @@ public class PlayerHandling implements Listener {
             }
         }
     }
+
     @EventHandler
-    public void noBeds(PlayerInteractEvent event){
+    public void noBeds(PlayerInteractEvent event) {
         Player player = event.getPlayer();
-        if (!event.hasBlock()) return;
+        if (!event.hasBlock())
+            return;
         Block block = event.getClickedBlock();
-        if (!(block.getBlockData() instanceof Bed)) return;
-        for (int i = Arena.arenas.size() - 1; i >= 0; i--) {
-            Arena arena = Arena.arenas.get(i);
-            if (arena.hasPlayer(player)){
-                event.setCancelled(true);
-                player.sendMessage(ChatColor.RED + "No Time for Sleep!");
-                return;
-            }
+        if (!(block.getBlockData() instanceof Bed))
+            return;
+        if (!Arena.arenaOf(player).isPresent())
+            return;
+        event.setCancelled(true);
+        player.sendMessage(ChatColor.RED + "No Time for Sleep!");
+    }
+
+    @EventHandler
+    public void stopPLethal(EntityDamageByEntityEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        Arena arena = Arena.arenaOf(player).orElseThrow();
+        double health = player.getHealth() - event.getFinalDamage();
+        if (health >= 0) return;
+        event.setCancelled(true);
+        if (!arena.isStarted()) {
+            player.teleport(arena.getLobby());
+        } else if (!arena.hasWallFallen()) {
+            player.teleport(arena.getSpawnFor(player));
+        } else {
+            player.sendMessage(ChatColor.RED + "You have been eliminated!");
+            String msg = ChatColor.GOLD + "" + ChatColor.BOLD + "NOTICE: " + ChatColor.WHITE + player.getName()
+                    + " has been eliminated by ";
+            if (event.getDamager() instanceof LivingEntity living) {
+                msg += living.getName();
+            } else if (event.getDamager() instanceof Projectile proj
+                    && proj.getShooter() instanceof LivingEntity living)
+                msg += living.getName() + "!";
+            arena.broadcast(msg);
+            player.setGameMode(GameMode.SPECTATOR);
+            arena.checkEnding();
+
         }
     }
 
     @EventHandler
-    public void stopPLethal(EntityDamageByEntityEvent event){
-        if (event.getEntity() instanceof Player player){
-            for (int i = Arena.arenas.size()-1; i >= 0; i--){
-                Arena arena = Arena.arenas.get(i);
-                if (arena.hasPlayer(player)){
-                    double health = player.getHealth() - event.getFinalDamage();
-                    if (health < 0){
-                        event.setCancelled(true);
-                        if (!arena.isStarted()) {
-                            player.teleport(arena.getLobby());
-                        } else if (!arena.hasWallFallen()){
-                            player.teleport(arena.getSpawnFor(player));
-                        } else {
-                            player.sendMessage(ChatColor.RED + "You have been eliminated!");
-                            String msg = ChatColor.GOLD + "" + ChatColor.BOLD + "NOTICE: " + ChatColor.WHITE + player.getName() + " has been eliminated by ";
-                            if (event.getDamager() instanceof LivingEntity living){
-                                msg += living.getName();
-                            }else if (event.getDamager() instanceof Projectile proj && proj.getShooter() instanceof LivingEntity living) msg += living.getName() + "!";
-                            arena.broadcast(msg);
-                            player.setGameMode(GameMode.SPECTATOR);
-                            arena.checkEnding();
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    @EventHandler
-    public void onWorldChange(PlayerChangedWorldEvent event){
+    public void onWorldChange(PlayerChangedWorldEvent event) {
         Player player = event.getPlayer();
-        for (int i = Arena.arenas.size()-1; i >= 0; i--){
-            Arena arena = Arena.arenas.get(i);
-            if (arena.hasPlayer(player)){
-                if (!arena.getLobby().getWorld().equals(event.getPlayer().getWorld()))
-                    arena.removePlayer(player);
-            }
+        var oa = Arena.arenaOf(player);
+        if (!oa.isPresent())
+            return;
+        Arena a = oa.orElseThrow();
+        if (!a.getLobby().getWorld().equals(event.getPlayer().getWorld()))
+            a.removePlayer(player);
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
+        Arena a = Arena.arenaOf(player).orElseThrow();
+        a.disconnectPlayer(player);
+    }
+
+    @EventHandler
+    public void handlePlacement(BlockPlaceEvent event) {
+        Player player = event.getPlayer();
+        Arena a = Arena.arenaOf(player).orElseThrow();
+        Block block = event.getBlock();
+        boolean pass = a.isStarted() && a.tryEdit(player, block);
+        if (!pass) {
+            event.setCancelled(true);
+            player.sendMessage(ChatColor.RED + "You can't place blocks here!");
+            return;
+        }
+        popPlace(block, a);
+        if (!a.blockMap.containsKey(block.getLocation())) {
+            BlockState old = event.getBlockReplacedState();
+            Material oldMat = old.getType();
+            BlockData oldData = old.getBlockData();
+            DataPair pair = new DataPair(oldMat, oldData);
+            a.blockMap.put(block.getLocation(), pair);
         }
     }
 
     @EventHandler
-    public void onQuit(PlayerQuitEvent event){
+    public void handleBreaking(BlockBreakEvent event) {
         Player player = event.getPlayer();
-        for (int i = Arena.arenas.size()-1; i >= 0; i--){
-            Arena arena = Arena.arenas.get(i);
-            if (arena.hasPlayer(player)){
-                arena.disconnectPlayer(player);
-            }
+        Arena a = Arena.arenaOf(player).orElseThrow();
+        Block block = event.getBlock();
+        boolean pass = a.isStarted() && a.tryEdit(player, block);
+        if (!pass) {
+            event.setCancelled(true);
+            player.sendMessage(ChatColor.RED + "you can't break blocks here");
+            return;
+        }
+        chainBlocks(block, a);
+        if (!a.blockMap.containsKey(block.getLocation())) {
+            Material oldMat = block.getType();
+            BlockData oldData = block.getBlockData();
+            DataPair pair = new DataPair(oldMat, oldData);
+            a.blockMap.put(block.getLocation(), pair);
         }
     }
 
     @EventHandler
-    public void handleBreaking(BlockBreakEvent event){
-        Player player = event.getPlayer();
-        for (int i = Arena.arenas.size()-1; i >= 0; i--){
-            Arena arena = Arena.arenas.get(i);
-            if (arena.hasPlayer(player)){
-                Block block = event.getBlock();
-                boolean pass = arena.tryEdit(player, block);
-                if (!arena.isStarted()) pass = false;
-                if (!pass){
-                    event.setCancelled(true);
-                    player.sendMessage(ChatColor.RED + "you can't break blocks here");
-                    return;
-                }
-                chainBlocks(block, arena);
-                if (!arena.blockMap.containsKey(block.getLocation())){
-                    Material oldMat = block.getType();
-                    BlockData oldData = block.getBlockData();
-                    DataPair pair = new DataPair(oldMat, oldData);
-                    arena.blockMap.put(block.getLocation(), pair);
-                }
-                return;
-            }
-        }
-    }
-    @EventHandler
-    public void handleDecay(BlockFadeEvent event){
+    public void handleDecay(BlockFadeEvent event) {
         Block block = event.getBlock();
         Material m = block.getType();
         Location loc = block.getLocation();
-        if (m==Material.FIRE || m==Material.SOUL_FIRE)return;
-        for (int i = Arena.arenas.size()-1; i >= 0; i--){
-            Arena arena = Arena.arenas.get(i);
-            if (arena.isInArena(loc) && !arena.blockMap.containsKey(loc)){
-                DataPair pair = new DataPair(m, block.getBlockData());
-                arena.blockMap.put(loc, pair);
-            }
+        if (m == Material.FIRE || m == Material.SOUL_FIRE)
+            return;
+        var ao = Arena.arenaOf(loc);
+        if (!ao.isPresent()) return;
+        Arena arena = ao.orElseThrow();
+        if (!arena.blockMap.containsKey(loc)) {
+            DataPair pair = new DataPair(m, block.getBlockData());
+            arena.blockMap.put(loc, pair);
         }
     }
 
     @EventHandler
-    public void handlePlacement(BlockPlaceEvent event){
-        Player player = event.getPlayer();
-        for (int i = Arena.arenas.size() - 1; i>=0; i--){
-            Arena arena = Arena.arenas.get(i);
-            if (arena.hasPlayer(player)){
-                Block block = event.getBlockPlaced();
-                boolean pass = arena.tryEdit(player, block);
-                if (!arena.isStarted()) pass = false;
-                if (!pass) {
-                    event.setCancelled(true);
-                    player.sendMessage(ChatColor.RED + "You can't place blocks here!");
-                    return;
-                }
-                popPlace(block, arena);
-                if (!arena.blockMap.containsKey(block.getLocation())) {
-                    BlockState old = event.getBlockReplacedState();
-                    Material oldMat = old.getType();
-                    BlockData oldData = old.getBlockData();
-                    DataPair pair = new DataPair(oldMat, oldData);
-                    arena.blockMap.put(block.getLocation(), pair);
-                }
-                return;
-            }
-        }
-    }
-
-    @EventHandler
-    public void handleFallingBlocks(EntitySpawnEvent event){
+    public void handleFallingBlocks(EntitySpawnEvent event) {
         Entity entity = event.getEntity();
-        if (entity instanceof FallingBlock fallingBlock){
+        if (entity instanceof FallingBlock fallingBlock) {
             Location bLoc = fallingBlock.getLocation().getBlock().getLocation();
-            for (int i = Arena.arenas.size()-1; i>=0; i--){
-                Arena arena = Arena.arenas.get(i);
-                if (arena.isInArena(bLoc)){
-                    chainBlocks(bLoc.getBlock(),arena);
-                    new BukkitRunnable(){
-                        @Override
-                        public void run(){
-                            if (fallingBlock.isDead()) {
-                                this.cancel();
-                                return;
-                            }
-                            if (fallingBlock.isOnGround()){
-                                Block current = fallingBlock.getLocation().getBlock();
-                                if (arena.isInArena(current.getLocation()) && !arena.blockMap.containsKey(current.getLocation())){
-                                    DataPair pair = new DataPair(current.getType(), current.getBlockData());
-                                    arena.blockMap.put(current.getLocation(), pair);
-                                }
-                                this.cancel();
-                                return;
-                            }
+            var ao = Arena.arenaOf(bLoc);
+            if (!ao.isPresent()) return;
+            Arena arena = ao.orElseThrow();
+            chainBlocks(bLoc.getBlock(), arena);
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    if (fallingBlock.isDead()) {
+                        this.cancel();
+                        return;
+                    }
+                    if (fallingBlock.isOnGround()) {
+                        Block current = fallingBlock.getLocation().getBlock();
+                        if (arena.hasLocation(current.getLocation())
+                                && !arena.blockMap.containsKey(current.getLocation())) {
+                            DataPair pair = new DataPair(current.getType(), current.getBlockData());
+                            arena.blockMap.put(current.getLocation(), pair);
                         }
-                    }.runTaskTimer(plugin, 0, 1);
-                    if (!arena.blockMap.containsKey(bLoc)){
-                        DataPair pair = new DataPair(fallingBlock.getBlockData().getMaterial(), fallingBlock.getBlockData());
-                        arena.blockMap.put(bLoc, pair);
+                        this.cancel();
+                        return;
                     }
                 }
+            }.runTaskTimer(plugin, 0, 1);
+            if (!arena.blockMap.containsKey(bLoc)) {
+                DataPair pair = new DataPair(fallingBlock.getBlockData().getMaterial(),
+                        fallingBlock.getBlockData());
+                arena.blockMap.put(bLoc, pair);
             }
+        
         }
     }
 
     @EventHandler
-    public void handleBurn(BlockBurnEvent event){
+    public void handleBurn(BlockBurnEvent event) {
         Block block = event.getBlock();
-        for (int i = Arena.arenas.size()-1; i >= 0; i--){
-            Arena arena = Arena.arenas.get(i);
+        for (Arena arena : Arena.arenas) {
             chainBlocks(block, arena);
-            if (arena.isInArena(block.getLocation()) && !arena.blockMap.containsKey(block.getLocation())) {
+            if (arena.hasLocation(block.getLocation()) && !arena.blockMap.containsKey(block.getLocation())) {
                 DataPair pair = new DataPair(block.getType(), block.getBlockData());
                 arena.blockMap.put(block.getLocation(), pair);
                 return;
@@ -265,118 +250,118 @@ public class PlayerHandling implements Listener {
     }
 
     @EventHandler
-    public void handleExplosians(EntityExplodeEvent event){
+    public void handleExplosians(EntityExplodeEvent event) {
         List<Block> affected = event.blockList();
-        for (int a = affected.size()-1; a>=0; a--){
+        for (int a = affected.size() - 1; a >= 0; a--) {
             Block block = affected.get(a);
-            //While technically o(n^2), realistically, there would only be 1-2 arenas at one time.
-            for (int i = Arena.arenas.size()-1; i>=0; i--){
-                Arena arena = Arena.arenas.get(i);
-                if (arena.isInArena(block.getLocation())){
-                    if (!arena.isStarted()) affected.remove(a);
-                    else {
-                        for (Wall wall : arena.getWalls()) {
-                            if (wall.isOnWall(block.getLocation()) && !wall.isFallen()) affected.remove(a);
-                            chainBlocks(block, arena);
-                            if (!arena.blockMap.containsKey(block.getLocation())) {
-                                DataPair pair = new DataPair(block.getType(), block.getBlockData());
-                                arena.blockMap.put(block.getLocation(), pair);
-                            }
-                        }
-                        break;
-                    }
-                }else if (arena.isInArena(event.getLocation())){
+            var ao = Arena.arenaOf(block.getLocation());
+            if (!ao.isPresent()) {
+                ao = Arena.arenaOf(event.getLocation());
+                if (ao.isPresent()) {
                     affected.remove(a);
                     break;
                 }
-
+                return;
+            }
+            Arena arena = ao.orElseThrow();
+            if (!arena.isStarted())
+                affected.remove(a);
+            else {
+                for (Wall wall : arena.getWalls()) {
+                    if (wall.isOnWall(block.getLocation()) && !wall.isFallen())
+                        affected.remove(a);
+                    chainBlocks(block, arena);
+                    if (!arena.blockMap.containsKey(block.getLocation())) {
+                        DataPair pair = new DataPair(block.getType(), block.getBlockData());
+                        arena.blockMap.put(block.getLocation(), pair);
+                    }
+                }
+                break;
             }
         }
     }
-
 
     /**
      * MIGHT BE VOLATILE !!!!!!
      * Fail
      */
     @EventHandler
-    public void handleBlockPhysics(BlockPhysicsEvent event){
+    public void handleBlockPhysics(BlockPhysicsEvent event) {
     }
 
     @EventHandler
-    public void recordBreakage(BlockBreakEvent event){
+    public void recordBreakage(BlockBreakEvent event) {
         Block block = event.getBlock();
     }
 
-
-
-    public void chainBlocksUp(Block block, Arena arena){
+    public void chainBlocksUp(Block block, Arena arena) {
         Material mat = block.getType();
         Set<Material> stack = popStack();
         Set<Material> dirUp = popDirUp();
-        if (stack.contains(mat)){
+        if (stack.contains(mat)) {
             Location loc = block.getLocation().clone();
             int y = block.getY();
             Material m = loc.getBlock().getType();
-            while (y < 256 && stack.contains(mat)){
-                if (m == mat){
-                    if (!arena.blockMap.containsKey(loc)){
-                        DataPair pair = new DataPair(m,loc.getBlock().getBlockData());
-                        arena.blockMap.put(loc,pair);
+            while (y < 256 && stack.contains(mat)) {
+                if (m == mat) {
+                    if (!arena.blockMap.containsKey(loc)) {
+                        DataPair pair = new DataPair(m, loc.getBlock().getBlockData());
+                        arena.blockMap.put(loc, pair);
                     }
                 }
-                loc = loc.clone().add(0,1,0);
+                loc = loc.clone().add(0, 1, 0);
                 m = loc.getBlock().getType();
                 y++;
             }
-        }else if(dirUp.contains(mat)){
+        } else if (dirUp.contains(mat)) {
             Location loc = block.getLocation();
-            if (!arena.blockMap.containsKey(loc)){
+            if (!arena.blockMap.containsKey(loc)) {
                 DataPair pair = new DataPair(mat, loc.getBlock().getBlockData());
                 arena.blockMap.put(loc, pair);
             }
         }
     }
 
-    public void checkSides(Block block, Arena arena){
+    public void checkSides(Block block, Arena arena) {
         Set<Material> sideMats = popSides();
-        BlockFace[] sides = new BlockFace[]{BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST};
+        BlockFace[] sides = new BlockFace[] { BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST };
         for (BlockFace side : sides) {
             Block b = block.getRelative(side);
-            if (sideMats.contains(b.getType()) && arena.isInArena(b.getLocation()) && !arena.blockMap.containsKey(b.getLocation())){
+            if (sideMats.contains(b.getType()) && arena.hasLocation(b.getLocation())
+                    && !arena.blockMap.containsKey(b.getLocation())) {
                 DataPair pair = new DataPair(b.getType(), b.getBlockData());
                 arena.blockMap.put(b.getLocation(), pair);
             }
         }
     }
-    public void chainBlocksDown(Block block, Arena arena){
+
+    public void chainBlocksDown(Block block, Arena arena) {
         Material mat = block.getType();
         Set<Material> stack = popDown();
-        if (stack.contains(mat)){
+        if (stack.contains(mat)) {
             Location loc = block.getLocation().clone();
             int y = block.getY();
             Material m = loc.getBlock().getType();
-            while (y > 0 && stack.contains(mat)){
-                if (m == mat){
-                    if (!arena.blockMap.containsKey(loc)){
-                        DataPair pair = new DataPair(m,loc.getBlock().getBlockData());
-                        arena.blockMap.put(loc,pair);
+            while (y > 0 && stack.contains(mat)) {
+                if (m == mat) {
+                    if (!arena.blockMap.containsKey(loc)) {
+                        DataPair pair = new DataPair(m, loc.getBlock().getBlockData());
+                        arena.blockMap.put(loc, pair);
                     }
                 }
-                loc = loc.clone().add(0,-1,0);
+                loc = loc.clone().add(0, -1, 0);
                 m = loc.getBlock().getType();
                 y--;
             }
         }
     }
 
-
-    public void popPlace(Block block, Arena arena){
-        BlockFace[] sides = new BlockFace[]{BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST};
-        for (BlockFace face : sides){
+    public void popPlace(Block block, Arena arena) {
+        BlockFace[] sides = new BlockFace[] { BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST };
+        for (BlockFace face : sides) {
             Block b = block.getRelative(face);
-            if (!block.getType().isAir() && b.getType() == Material.CACTUS){
-                if (arena.isInArena(b.getLocation()) && !arena.blockMap.containsKey(b.getLocation())){
+            if (!block.getType().isAir() && b.getType() == Material.CACTUS) {
+                if (arena.hasLocation(b.getLocation()) && !arena.blockMap.containsKey(b.getLocation())) {
                     DataPair pair = new DataPair(Material.CACTUS, b.getBlockData());
                     arena.blockMap.put(b.getLocation(), pair);
                 }
@@ -384,14 +369,13 @@ public class PlayerHandling implements Listener {
         }
     }
 
-
-    public void chainBlocks(Block block, Arena arena){
-       chainBlocksDown(block.getRelative(BlockFace.DOWN), arena);
-       chainBlocksUp(block.getRelative(BlockFace.UP), arena);
-       checkSides(block, arena);
+    public void chainBlocks(Block block, Arena arena) {
+        chainBlocksDown(block.getRelative(BlockFace.DOWN), arena);
+        chainBlocksUp(block.getRelative(BlockFace.UP), arena);
+        checkSides(block, arena);
     }
 
-    private Set<Material> popStack(){
+    private Set<Material> popStack() {
         Set<Material> mats = new HashSet<>();
         mats.add(Material.FLOWER_POT);
         mats.add(Material.MOSS_CARPET);
@@ -420,7 +404,8 @@ public class PlayerHandling implements Listener {
         mats.add(Material.KELP_PLANT);
         return mats;
     }
-    private Set<Material> popDown(){
+
+    private Set<Material> popDown() {
         Set<Material> mats = new HashSet<>();
         mats.add(Material.VINE);
         mats.add(Material.CAVE_VINES);
@@ -436,7 +421,7 @@ public class PlayerHandling implements Listener {
         return mats;
     }
 
-    public Set<Material> popDirUp(){
+    public Set<Material> popDirUp() {
         Set<Material> mats = new HashSet<>(popStack());
         mats.add(Material.TORCH);
         mats.add(Material.SOUL_TORCH);
@@ -517,7 +502,7 @@ public class PlayerHandling implements Listener {
         return mats;
     }
 
-    public Set<Material> popSides(){
+    public Set<Material> popSides() {
         Set<Material> mats = new HashSet<>();
         mats.add(Material.LEVER);
         mats.add(Material.WARPED_BUTTON);
@@ -540,17 +525,14 @@ public class PlayerHandling implements Listener {
         return mats;
     }
 
-
     @EventHandler
-    public void handleWaterDamage(BlockFromToEvent event){
-        Block from = event.getBlock();
+    public void handleWaterDamage(BlockFromToEvent event) {
         Block to = event.getToBlock();
         Material tMat = to.getType();
-        for (int i = Arena.arenas.size()-1; i>=0; i--){
-            Arena arena = Arena.arenas.get(i);
-            if (arena.isInArena(to.getLocation())){
+        for (Arena arena : Arena.arenas) {
+            if (arena.hasLocation(to.getLocation())) {
                 chainBlocks(to, arena);
-                if (!arena.blockMap.containsKey(to.getLocation())){
+                if (!arena.blockMap.containsKey(to.getLocation())) {
                     DataPair pair = new DataPair(tMat, to.getBlockData());
                     arena.blockMap.put(to.getLocation(), pair);
                     return;

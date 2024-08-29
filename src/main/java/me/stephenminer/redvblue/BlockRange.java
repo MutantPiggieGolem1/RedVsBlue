@@ -34,7 +34,7 @@ public record BlockRange(World world, BlockVector p1, BlockVector p2) {
         return new BlockRange(loc1.getWorld(), new BlockVector(loc1.toVector()), new BlockVector(loc2.toVector()));
     }
 
-    private static final Pattern serializedPattern = Pattern.compile("(.*): \\((\\d+),(\\d+),(\\d+)\\)-\\((\\d+),(\\d+),(\\d+)\\)");
+    private static final Pattern serializedPattern = Pattern.compile("(.*)/\\((\\d+),(\\d+),(\\d+)\\)~\\((\\d+),(\\d+),(\\d+)\\)");
     public static final BlockRange fromString(Server currentServer, String serialized) {
         var m = serializedPattern.matcher(serialized);
         assert m.matches();
@@ -46,6 +46,6 @@ public record BlockRange(World world, BlockVector p1, BlockVector p2) {
 
     @Override
     public final String toString() {
-        return world.getName() + ": (" + p1.toString() + ") - (" + p2.toString() + ")";
+        return world.getName() + "/(" + p1.toString() + ")~(" + p2.toString() + ")";
     }
 }
