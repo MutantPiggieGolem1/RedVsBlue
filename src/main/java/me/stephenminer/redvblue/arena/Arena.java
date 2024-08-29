@@ -31,7 +31,7 @@ import org.bukkit.scoreboard.Team;
 import org.bukkit.util.Vector;
 
 import me.stephenminer.redvblue.BlockRange;
-import me.stephenminer.redvblue.Items;
+import me.stephenminer.redvblue.CustomItems;
 import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.chests.NewLootChest;
 
@@ -128,14 +128,13 @@ public class Arena {
             Team team = findOpenTeam();
             team.addPlayer(player);
 
-            Items items = new Items();
             player.getInventory().clear();
             if (board.getTeam("red").equals(team)) {
                 player.teleport(spawnLocations.get("red"));
-                items.outfitPlayer(player, 0);
+                CustomItems.outfitPlayer(player, 0);
             } else {
                 player.teleport(spawnLocations.get("blue"));
-                items.outfitPlayer(player, 1);
+                CustomItems.outfitPlayer(player, 1);
             }
             player.sendMessage(ChatColor.GOLD + "You are on the " + team.getName() + " team!");
             player.setGameMode(GameMode.SURVIVAL);
@@ -387,7 +386,6 @@ public class Arena {
         Team blue = board.getTeam("blue");
         List<UUID> copy = new ArrayList<>(players);
 
-        Items items = new Items();
         if (!setTeam) {
             while (!copy.isEmpty()) {
                 int index = ThreadLocalRandom.current().nextInt(copy.size());
@@ -403,7 +401,7 @@ public class Arena {
                 else if (team.equals(blue))
                     p.teleport(spawnLocations.get("blue"));
                 team.addPlayer(p);
-                items.outfitPlayer(p, t);
+                CustomItems.outfitPlayer(p, t);
                 copy.remove(index);
             }
         } else {
@@ -424,7 +422,6 @@ public class Arena {
 
     private void assignTeam(Team team, String checkFor, boolean red) {
         TeamChecker checker = new TeamChecker(plugin);
-        Items items = new Items();
         for (UUID uuid : players) {
             Player player = Bukkit.getPlayer(uuid);
             if (player == null)
@@ -439,7 +436,7 @@ public class Arena {
                 teamId = 1;
             }
 
-            items.outfitPlayer(player, teamId);
+            CustomItems.outfitPlayer(player, teamId);
         }
     }
 

@@ -16,21 +16,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import me.stephenminer.redvblue.arena.Arena;
 import me.stephenminer.redvblue.chests.ChestSetupEvents;
-import me.stephenminer.redvblue.commands.ArenaCmd;
-import me.stephenminer.redvblue.commands.ArenaWand;
-import me.stephenminer.redvblue.commands.ForceEnd;
-import me.stephenminer.redvblue.commands.ForceRvB;
-import me.stephenminer.redvblue.commands.Give;
-import me.stephenminer.redvblue.commands.JoinArena;
-import me.stephenminer.redvblue.commands.LeaveArena;
-import me.stephenminer.redvblue.commands.LootChestCmd;
-import me.stephenminer.redvblue.commands.LootTableCmd;
-import me.stephenminer.redvblue.commands.MapRegenCmd;
-import me.stephenminer.redvblue.commands.Reload;
-import me.stephenminer.redvblue.commands.RerouteLoc;
-import me.stephenminer.redvblue.commands.SetMinPlayers;
-import me.stephenminer.redvblue.commands.SetWallTime;
-import me.stephenminer.redvblue.commands.WallWand;
+import me.stephenminer.redvblue.commands.*;
 import me.stephenminer.redvblue.events.ArenaGuiEvents;
 import me.stephenminer.redvblue.events.ArenaSetup;
 import me.stephenminer.redvblue.events.PlayerHandling;
@@ -79,7 +65,6 @@ public final class RedBlue extends JavaPlugin {
 
     private void registerCommands() {
         getCommand("setRerouteLoc").setExecutor(new RerouteLoc(this));
-        getCommand("arenaWand").setExecutor(new ArenaWand());
         getCommand("leaveRvB").setExecutor(new LeaveArena());
         getCommand("reloadRvB").setExecutor(new Reload(this));
         getCommand("setMinPlayers").setExecutor(new SetMinPlayers(this));
@@ -87,10 +72,6 @@ public final class RedBlue extends JavaPlugin {
         getCommand("forceRvb").setExecutor(new ForceRvB());
         getCommand("endRvb").setExecutor(new ForceEnd());
         getCommand("rvbRegen").setExecutor(new MapRegenCmd());
-
-        WallWand wallWand = new WallWand(this);
-        getCommand("wallWand").setExecutor(wallWand);
-        getCommand("wallWand").setTabCompleter(wallWand);
 
         ArenaCmd arenaCmd = new ArenaCmd(this);
         getCommand("arena").setExecutor(arenaCmd);
@@ -108,9 +89,9 @@ public final class RedBlue extends JavaPlugin {
         getCommand("rvbloot").setExecutor(lootTableCmd);
         getCommand("rvbloot").setTabCompleter(lootTableCmd);
 
-        Give give = new Give(this);
-        getCommand("rvbGive").setExecutor(give);
-        getCommand("rvbGive").setTabCompleter(give);
+        GiveCustom give = new GiveCustom(this);
+        getCommand("rvbgive").setExecutor(give);
+        getCommand("rvbgive").setTabCompleter(give);
     }
 
     public String fromBLoc(Location loc) {

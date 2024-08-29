@@ -29,6 +29,10 @@ public record BlockRange(World world, BlockVector p1, BlockVector p2) {
         return BoundingBox.of(p1.clone().add(offset), p2.clone().add(offset));
     }
 
+    public boolean contains(Location other) {
+        return other.getWorld() == world && toBoundingBox().contains(other.toVector());
+    }
+
     public static final BlockRange fromLocations(Location loc1, Location loc2) {
         assert loc1.getWorld() == loc2.getWorld();
         return new BlockRange(loc1.getWorld(), new BlockVector(loc1.toVector()), new BlockVector(loc2.toVector()));

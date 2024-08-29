@@ -5,10 +5,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+import javax.annotation.Nullable;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -20,37 +23,34 @@ import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.BlockVector;
 
 import me.stephenminer.redvblue.BlockRange;
 import me.stephenminer.redvblue.RedBlue;
-import me.stephenminer.redvblue.arena.Arena;
 import me.stephenminer.redvblue.arena.Wall;
 
 public class ArenaSetup implements Listener {
     private final HashMap<UUID, Location> loc1s;
     private final HashMap<UUID, Location> loc2s;
-
-    private final HashMap<UUID, Location> wLoc1s;
-    private final HashMap<UUID, Location> wLoc2s;
-
-    private final HashMap<UUID, String> canCreate;
     private final List<UUID> canName;
 
-    private final HashMap<UUID, SPair> canDelete;
+    private final HashMap<UUID, InProgRange> wToCreate;
+    private final HashMap<UUID, SPair> wToDelete;
+
     private final RedBlue plugin;
     public ArenaSetup(RedBlue plugin){
         loc1s = new HashMap<>();
         loc2s = new HashMap<>();
-        wLoc1s = new HashMap<>();
-        wLoc2s = new HashMap<>();
         canName = new ArrayList<>();
-        canCreate = new HashMap<>();
-        canDelete = new HashMap<>();
+        wToCreate = new HashMap<>();
+        wToDelete = new HashMap<>();
         this.plugin = plugin;
     }
+    
+    // Arena Creation
     @EventHandler
     public void arenaWandLocs(PlayerInteractEvent event){
-        if (!event.hasItem()) return;
+        if (!event.hasItem() || event.getAction() == Action.PHYSICAL) return;
         Player player = event.getPlayer();
         ItemStack item = event.getItem();
         if (plugin.checkLore(item, "arena-wand")){
@@ -74,6 +74,7 @@ public class ArenaSetup implements Listener {
                     loc1s.put(uuid, event.getClickedBlock().getLocation());
                     player.sendMessage(ChatColor.GREEN + "Position 1 set!");
                 }
+                default -> {return;}
             }
             if (loc1s.containsKey(uuid) && loc2s.containsKey(uuid)){
                 canName.add(uuid);
@@ -81,67 +82,6 @@ public class ArenaSetup implements Listener {
             }
         }
     }
-    
-    @EventHandler
-    public void wallWandLocs(PlayerInteractEvent event){
-        if (!event.hasItem()) return;
-        Player player = event.getPlayer();
-        ItemStack item = event.getItem();
-        if (plugin.checkLore(item, "wall-wand")){
-            Action action = event.getAction();
-            UUID uuid = player.getUniqueId();
-            event.setCancelled(true);
-            switch (action){
-                case RIGHT_CLICK_AIR -> {
-                    wLoc2s.put(uuid, player.getLocation().getBlock().getLocation());
-                    player.sendMessage(ChatColor.GREEN + "Position 2 set!");
-                }
-                case RIGHT_CLICK_BLOCK -> {
-                    wLoc2s.put(uuid, event.getClickedBlock().getLocation());
-                    player.sendMessage(ChatColor.GREEN + "Position 2 set!");
-                }
-                case LEFT_CLICK_AIR -> {
-                    wLoc1s.put(uuid, player.getLocation().getBlock().getLocation());
-                    player.sendMessage(ChatColor.GREEN + "Position 1 set!");
-                }
-                case LEFT_CLICK_BLOCK -> {
-                    wLoc1s.put(uuid, event.getClickedBlock().getLocation());
-                    player.sendMessage(ChatColor.GREEN + "Position 1 set!");
-                }
-            }
-            if (wLoc1s.containsKey(uuid) && wLoc2s.containsKey(uuid)){
-                canCreate.put(uuid, parseId(item));
-                player.sendMessage(ChatColor.GOLD + "Please type confirm if you are ready to create the wall!");
-            }
-        }
-    }
-
-    @EventHandler
-    public void removeWall(BlockBreakEvent event){
-        Player player = event.getPlayer();
-        ItemStack item = event.getPlayer().getInventory().getItemInMainHand();
-        if (plugin.checkLore(item, "wall-remover")){
-            event.setCancelled(true);
-            String id = parseId(item);
-            for (Arena arena : Arena.arenas){
-                if (arena.getId().equals(id)) {
-                    player.sendMessage(ChatColor.RED + "You cannot remove the wall of an active arena");
-                    return;
-                }
-            }
-            String sWall = findWall(id, event.getBlock());
-            if (sWall == null){
-                player.sendMessage(ChatColor.RED + "There is no wall here!");
-                return;
-            }
-            SPair pair = new SPair(id, sWall);
-            canDelete.put(player.getUniqueId(),pair);
-            player.sendMessage(ChatColor.GREEN + "Type confirm in chat to confirm deletion");
-        }
-    }
-
-
-
     @EventHandler
     public void nameArena(AsyncPlayerChatEvent event){
         Player player = event.getPlayer();
@@ -157,114 +97,158 @@ public class ArenaSetup implements Listener {
                 player.sendMessage(ChatColor.RED + "Cancelling creation...");
                 return;
             }
-            if (idExists(msg)){
+            if (arenaExists(msg)){
                 loc1s.remove(uuid);
                 loc2s.remove(uuid);
                 canName.remove(uuid);
                 player.sendMessage(ChatColor.RED + "An arena with this id (" + msg + ") already exists!");
             }
             else {
-                createArena(msg,loc1s.get(uuid), loc2s.get(uuid));
+                createArena(msg, BlockRange.fromLocations(loc1s.get(uuid), loc2s.get(uuid)));
                 loc1s.remove(uuid);
                 loc2s.remove(uuid);
                 canName.remove(uuid);
                 player.sendMessage(ChatColor.GREEN + "Created a new arena " + msg + "!");
             }
-
         }
     }
-
-    @EventHandler
-    public void createWall(AsyncPlayerChatEvent event){
-        Player player = event.getPlayer();
-        UUID uuid = player.getUniqueId();
-        if (canCreate.containsKey(uuid)){
-            String msg = ChatColor.stripColor(event.getMessage()).toUpperCase();
-            if (msg.equalsIgnoreCase("confirm")){
-                createWall(canCreate.get(uuid), msg, wLoc1s.get(uuid), wLoc2s.get(uuid));
-                player.sendMessage(ChatColor.GREEN + "Creating your wall and adding it to the arena!");
-                canCreate.remove(uuid);
-                wLoc1s.remove(uuid);
-                wLoc2s.remove(uuid);
-            }else if (msg.equalsIgnoreCase("cancel")){
-                canCreate.remove(uuid);
-                wLoc1s.remove(uuid);
-                wLoc2s.remove(uuid);
-                player.sendMessage(ChatColor.RED + "Cancelling creation");
-            }
-        }
-    }
-    @EventHandler
-    public void deleteWall(AsyncPlayerChatEvent event){
-        Player player = event.getPlayer();
-        UUID uuid = player.getUniqueId();
-        if (canDelete.containsKey(uuid)){
-            String msg = ChatColor.stripColor(event.getMessage()).toLowerCase();
-            if (msg.equalsIgnoreCase("confirm")){
-                SPair pair = canDelete.get(uuid);
-                deleteWall(pair.s1(),pair.s2());
-                player.sendMessage(ChatColor.GREEN + "Deleting your wall and remove it from the arena!");
-                canCreate.remove(uuid);
-                wLoc1s.remove(uuid);
-                wLoc2s.remove(uuid);
-            }else if (msg.equalsIgnoreCase("cancel")){
-                canDelete.remove(uuid);
-                player.sendMessage(ChatColor.RED + "Cancelling deletion");
-            }
-        }
-    }
-
-    @EventHandler
-    public void onQuit(PlayerQuitEvent event){
-        UUID uuid = event.getPlayer().getUniqueId();
-        loc1s.remove(uuid);
-        loc2s.remove(uuid);
-        wLoc1s.remove(uuid);
-        wLoc2s.remove(uuid);
-        canName.remove(uuid);
-        canCreate.remove(uuid);
-    }
-    @EventHandler
-    public void onWorldChange(PlayerChangedWorldEvent event){
-        UUID uuid = event.getPlayer().getUniqueId();
-        loc1s.remove(uuid);
-        loc2s.remove(uuid);
-        wLoc1s.remove(uuid);
-        wLoc2s.remove(uuid);
-        canName.remove(uuid);
-        canCreate.remove(uuid);
-    }
-
-    private void createArena(String id, Location loc1, Location loc2){
+    private void createArena(String id, BlockRange range){
         String path = "arenas." + id;
-        plugin.arenas.getConfig().set(path + ".loc1", plugin.fromBLoc(loc1));
-        plugin.arenas.getConfig().set(path + ".loc2", plugin.fromBLoc(loc2));
+        plugin.arenas.getConfig().set(path + ".range", range); // FIXME centralize
         plugin.arenas.saveConfig();
     }
+    // ===
 
-    private String findWall(String arenaId, Block block){
-        String path = "arenas." + arenaId + ".walls";
-        List<String> walls = plugin.arenas.getConfig().getStringList(path);
-        for (String sWall : walls){
-            Wall wall = Wall.fromString(plugin.getServer(), sWall);
-            if (wall.isOnWall(block.getLocation())) return sWall;
+    // Wall Creation
+    @EventHandler
+    public void createWallLocs(PlayerInteractEvent event){
+        if (!event.hasItem() || event.getAction() == Action.PHYSICAL) return;
+        Player player = event.getPlayer();
+        ItemStack item = event.getItem();
+        if (plugin.checkLore(item, "wall-wand")) {
+            Action action = event.getAction();
+            UUID uuid = player.getUniqueId();
+            event.setCancelled(true);
+            
+            if (!wToCreate.containsKey(uuid)) wToCreate.put(uuid, new InProgRange(player.getWorld()));
+            InProgRange inprog = wToCreate.get(uuid);
+            Location loc;
+            String sArena;
+            switch (action){
+                case RIGHT_CLICK_AIR:
+                case RIGHT_CLICK_BLOCK:
+                    loc = action == Action.RIGHT_CLICK_AIR ? 
+                        player.getLocation().getBlock().getLocation() :
+                        event.getClickedBlock().getLocation();
+        
+                    sArena = findArena(loc);
+                    if (sArena == null) {
+                        player.sendMessage(ChatColor.RED + "There is no arena here!");
+                        return;
+                    } else if (inprog.sArena != null && sArena != inprog.sArena) {
+                        player.sendMessage(ChatColor.RED + "This is a different arena!");
+                        return;
+                    }
+                    
+                    inprog.sArena = sArena;
+                    inprog.b = new BlockVector(loc.toVector());
+                    player.sendMessage(ChatColor.GREEN + "Position 2 set!");
+                    break;
+                case LEFT_CLICK_AIR:
+                case LEFT_CLICK_BLOCK:
+                    loc = action == Action.LEFT_CLICK_AIR ? 
+                        player.getLocation().getBlock().getLocation() :
+                        event.getClickedBlock().getLocation();
+
+                    sArena = findArena(loc);
+                    if (sArena == null) {
+                        player.sendMessage(ChatColor.RED + "There is no arena here!");
+                        return;
+                    } else if (inprog.sArena != null && sArena != inprog.sArena) {
+                        player.sendMessage(ChatColor.RED + "This is a different arena!");
+                        return;
+                    }
+
+                    inprog.sArena = sArena;
+                    inprog.a = new BlockVector(loc.toVector());
+                    player.sendMessage(ChatColor.GREEN + "Position 1 set!");
+                    break;
+                default:
+                    return;
+            }
+            if (inprog.isDone()) {
+                player.sendMessage(ChatColor.GOLD + "Please type your wall's material, or 'cancel'!");
+            }
         }
-        return null;
     }
-
-    private void createWall(String id, String material, Location loc1, Location loc2){
-        String path = "arenas." + id + ".walls";
-        Material mat = null;
-        try{
-            mat = Material.matchMaterial(material);
-        }catch (Exception ignored){}
-        if (mat == null) mat = Material.GLASS;
-        Wall wall = new Wall(mat, BlockRange.fromLocations(loc1, loc2));
+    @EventHandler
+    public void createWallMsg(AsyncPlayerChatEvent event){
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
+        if (!wToCreate.containsKey(uuid)) return;
+        InProgRange inprog = wToCreate.get(uuid);
+        if (!inprog.isDone()) return;
+        String msg = ChatColor.stripColor(event.getMessage()).toUpperCase();
+        if (msg.equalsIgnoreCase("cancel")){
+            player.sendMessage(ChatColor.RED + "Cancelling creation");
+        } else {
+            Material mat = Material.matchMaterial(msg);
+            if (mat == null) {
+                player.sendMessage(ChatColor.YELLOW + "Invalid Material, try again.");
+                return;
+            }
+            createWall(inprog.sArena, mat, inprog.toRange());
+            player.sendMessage(ChatColor.GREEN + "Creating your wall and adding it to the arena!");
+        }
+        wToCreate.remove(uuid);
+    }
+    private void createWall(String sArena, Material material, BlockRange range){
+        String path = "arenas." + sArena + ".walls";
+        Wall wall = new Wall(material, range);
         List<String> walls = plugin.arenas.getConfig().getStringList(path);
         walls.add(wall.toString());
         plugin.arenas.getConfig().set(path, walls);
         plugin.arenas.saveConfig();
         Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, wall::buildWall, 1);
+    }
+    // ===
+
+    // Wall Deletion
+    @EventHandler
+    public void deleteWallLocs(BlockBreakEvent event){
+        Player player = event.getPlayer();
+        ItemStack item = event.getPlayer().getInventory().getItemInMainHand();
+        if (plugin.checkLore(item, "wall-remover")){
+            event.setCancelled(true);
+            var sArena = findArena(event.getBlock().getLocation());
+            if (sArena == null) {
+                player.sendMessage(ChatColor.RED + "There is no arena here!");
+                return;
+            }
+        
+            String sWall = findWall(sArena, event.getBlock());
+            if (sWall == null){
+                player.sendMessage(ChatColor.RED + "There is no wall here!");
+                return;
+            }
+            wToDelete.put(player.getUniqueId(), new SPair(sArena, sWall));
+            player.sendMessage(ChatColor.GREEN + "Type confirm in chat to confirm deletion");
+        }
+    }
+    @EventHandler
+    public void deleteWallMsg(AsyncPlayerChatEvent event){
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
+        if (!wToDelete.containsKey(uuid)) return;
+        String msg = ChatColor.stripColor(event.getMessage()).toLowerCase();
+        if (msg.equalsIgnoreCase("confirm")){
+            SPair pair = wToDelete.get(uuid);
+            deleteWall(pair.s1(),pair.s2());
+            player.sendMessage(ChatColor.GREEN + "Removing your wall from the arena!");
+        } else {
+            player.sendMessage(ChatColor.RED + "Cancelling deletion");
+        }
+        wToDelete.remove(uuid);
     }
     private void deleteWall(String id, String sWall){
         String path = "arenas." + id + ".walls";
@@ -275,26 +259,60 @@ public class ArenaSetup implements Listener {
         Wall wall = Wall.fromString(plugin.getServer(), sWall);
         Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, wall::destroyWall, 1);
     }
+    // ===
 
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {clear(event.getPlayer().getUniqueId());}
+    @EventHandler
+    public void onWorldChange(PlayerChangedWorldEvent event) {clear(event.getPlayer().getUniqueId());}
+    private void clear(UUID uuid) {
+        loc1s.remove(uuid);
+        loc2s.remove(uuid);
+        wToCreate.remove(uuid);
+        wToDelete.remove(uuid);
+        canName.remove(uuid);
+    }
 
-    private boolean idExists(String id){
+    private boolean arenaExists(String id) {
         return plugin.arenas.getConfig().contains("arenas." + id);
     }
 
-    private String parseId(ItemStack item){
-        if (item.hasItemMeta() && item.getItemMeta().hasLore()){
-            List<String> lore = item.getItemMeta().getLore();
-            for (String entry : lore){
-                String temp = ChatColor.stripColor(entry);
-                if (temp.contains("Arena: ")){
-                    return temp.replace("Arena: ","");
-                }
-
-
-            }
+    private @Nullable String findArena(Location loc) {
+        var allArenas = plugin.arenas.getConfig().getConfigurationSection("arenas").getKeys(false);
+        for (String arenaKey : allArenas) {
+            String sBounds = plugin.arenas.getConfig().getString("arenas." + arenaKey + ".bounds");
+            var bounds = BlockRange.fromString(plugin.getServer(), sBounds);
+            if (bounds.contains(loc)) return arenaKey;
         }
         return null;
     }
 
-    public record SPair(String s1, String s2){}
+    private @Nullable String findWall(String arenaKey, Block block) {
+        String path = "arenas." + arenaKey + ".walls";
+        List<String> walls = plugin.arenas.getConfig().getStringList(path);
+        for (String sWall : walls){
+            Wall wall = Wall.fromString(plugin.getServer(), sWall);
+            if (wall.isOnWall(block.getLocation())) return sWall;
+        }
+        return null;
+    }
+
+    private record SPair(String s1, String s2){}
+    private class InProgRange {
+        public World world;
+        public @Nullable String sArena;
+        public @Nullable BlockVector a, b;
+
+        public InProgRange(World world) {
+            this.world = world;
+        }
+
+        public boolean isDone() {
+            return sArena != null && a != null && b != null && world != null;
+        }
+
+        public BlockRange toRange() {
+            return new BlockRange(world, a, b);
+        }
+    }
 }

@@ -6,6 +6,7 @@ import java.util.List;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -15,14 +16,17 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import me.stephenminer.redvblue.Items;
 import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.arena.Arena;
 
 public class ThrowingJuiceUse implements Listener {
+        public static NamespacedKey USES = new NamespacedKey(JavaPlugin.getPlugin(RedBlue.class),"rbuses");
+
+
     private final RedBlue plugin;
     public ThrowingJuiceUse(RedBlue plugin){
         this.plugin = plugin;
@@ -42,14 +46,14 @@ public class ThrowingJuiceUse implements Listener {
     }
 
     private void updateUses(ItemStack item){
-        if (!item.hasItemMeta() || !item.getItemMeta().getPersistentDataContainer().has(Items.USES, PersistentDataType.INTEGER)) return;
-        int current = item.getItemMeta().getPersistentDataContainer().get(Items.USES,PersistentDataType.INTEGER);
+        if (!item.hasItemMeta() || !item.getItemMeta().getPersistentDataContainer().has(USES, PersistentDataType.INTEGER)) return;
+        int current = item.getItemMeta().getPersistentDataContainer().get(USES,PersistentDataType.INTEGER);
         current-=1;
         if (current < 1){
             item.setAmount(0);
             return;
         }
-        item.getItemMeta().getPersistentDataContainer().set(Items.USES,PersistentDataType.INTEGER,current);
+        item.getItemMeta().getPersistentDataContainer().set(USES,PersistentDataType.INTEGER,current);
         List<String> lore = item.getItemMeta().getLore();
         for (int i = 0; i < lore.size(); i++){
             String entry = lore.get(i);

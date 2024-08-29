@@ -25,7 +25,6 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockBurnEvent;
 import org.bukkit.event.block.BlockFadeEvent;
 import org.bukkit.event.block.BlockFromToEvent;
-import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -285,14 +284,14 @@ public class PlayerHandling implements Listener {
      * MIGHT BE VOLATILE !!!!!!
      * Fail
      */
-    @EventHandler
-    public void handleBlockPhysics(BlockPhysicsEvent event) {
-    }
+    // @EventHandler
+    // public void handleBlockPhysics(BlockPhysicsEvent event) {
+    // }
 
-    @EventHandler
-    public void recordBreakage(BlockBreakEvent event) {
-        Block block = event.getBlock();
-    }
+    // @EventHandler
+    // public void recordBreakage(BlockBreakEvent event) {
+    //     Block block = event.getBlock();
+    // }
 
     public void chainBlocksUp(Block block, Arena arena) {
         Material mat = block.getType();

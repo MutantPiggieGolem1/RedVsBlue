@@ -25,7 +25,6 @@ public class ArenaBuilder {
         this.id = id;
     }
 
-
     public void loadData(){
         String base = "arenas." + id;
         arenaBounds = BlockRange.fromString(plugin.getServer(), plugin.arenas.getConfig().getString(base + ".bounds"));
@@ -34,7 +33,6 @@ public class ArenaBuilder {
         lobby = plugin.fromString(plugin.arenas.getConfig().getString(base + ".lobby"));
         name = plugin.arenas.getConfig().getString( base + ".name");
     }
-
 
     public Set<NewLootChest> loadLootChests(){
         String path = "arenas." + id + ".loot-chests";
@@ -58,8 +56,7 @@ public class ArenaBuilder {
         return plugin.settings.getConfig().getInt(path);
     }
 
-
-    public Arena build(){
+    public Arena build() {
         Arena arena = new Arena(id, name, arenaBounds, redLoc, blueLoc, lobby);
         var walls = loadWalls();
         arena.setWalls(walls);

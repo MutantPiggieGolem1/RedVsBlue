@@ -40,7 +40,7 @@ public class WindScrollUse implements Listener {
         var res = player.getWorld().rayTraceEntities(eyeLoc, eyeLoc.getDirection(), 20, 0.3);
         if (res != null)
             res.getHitEntity().setVelocity(eyeLoc.getDirection().multiply(-5).add(new Vector(0, 2, 0)));
-        runCooldown(player, 50);
+        runCooldown(player, 20);
     }
 
     private boolean onCooldown(Player player){
