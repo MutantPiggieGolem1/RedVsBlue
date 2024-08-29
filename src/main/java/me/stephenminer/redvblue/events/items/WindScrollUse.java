@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
@@ -29,12 +30,17 @@ public class WindScrollUse implements Listener {
 
     @EventHandler
     public void useScroll(PlayerInteractEvent event) {
-        if (onCooldown(event.getPlayer())) return;
-        var eyeLoc = event.getPlayer().getEyeLocation();
-        var res = event.getPlayer().getWorld().rayTraceEntities(eyeLoc, eyeLoc.getDirection(), 20, 0.3);
+        if (!event.hasItem()) return;
+        ItemStack item = event.getItem();
+        Player player = event.getPlayer();
+        if (plugin.checkLore(item,"windscroll")) return;
+
+        if (onCooldown(player)) return;
+        var eyeLoc = player.getEyeLocation();
+        var res = player.getWorld().rayTraceEntities(eyeLoc, eyeLoc.getDirection(), 20, 0.3);
         if (res != null)
             res.getHitEntity().setVelocity(eyeLoc.getDirection().multiply(-5).add(new Vector(0, 2, 0)));
-        runCooldown(event.getPlayer(), 50);
+        runCooldown(player, 50);
     }
 
     private boolean onCooldown(Player player){

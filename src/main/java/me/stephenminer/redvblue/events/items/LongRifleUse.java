@@ -28,7 +28,6 @@ public class LongRifleUse implements Listener {
         cooldown = new HashSet<>();
     }
 
-
     @EventHandler
     public void shootRifle(PlayerInteractEvent event){
         if (!event.hasItem()) return;
