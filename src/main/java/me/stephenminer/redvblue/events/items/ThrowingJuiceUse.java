@@ -1,14 +1,15 @@
 package me.stephenminer.redvblue.events.items;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
-import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -26,10 +27,11 @@ import me.stephenminer.redvblue.arena.Arena;
 
 public class ThrowingJuiceUse implements Listener {
     public static NamespacedKey USES = new NamespacedKey(JavaPlugin.getPlugin(RedBlue.class),"rbuses");
-
     private final RedBlue plugin;
-    public ThrowingJuiceUse(RedBlue plugin){
-        this.plugin = plugin;
+    private final Map<UUID, Long> cooldowns = new HashMap<>();
+
+    public ThrowingJuiceUse() {
+        this.plugin = JavaPlugin.getPlugin(RedBlue.class);
     }
 
     @EventHandler
@@ -38,10 +40,27 @@ public class ThrowingJuiceUse implements Listener {
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getAction() != Action.RIGHT_CLICK_AIR) return;
         ItemStack item = event.getItem();
         Player player = event.getPlayer();
-        if (player.hasCooldown(Material.NETHER_STAR)) return;
+        long now = System.currentTimeMillis();
+        if (cooldowns.containsKey(player.getUniqueId()) && cooldowns.get(player.getUniqueId()) > now) return;
         if (!plugin.checkLore(item,"throwingjuice")) return;
-        shootBeam(player,item);
-        player.setCooldown(Material.NETHER_STAR,10);
+        
+        var world = player.getWorld();
+        var eyeLoc = player.getEyeLocation();
+        var res = world.rayTraceEntities(eyeLoc.clone().add(eyeLoc.getDirection()), eyeLoc.getDirection(), 50, 0.5);
+        if (res == null) {
+            world.spawnParticle(Particle.ASH, eyeLoc, 15);
+            return;
+        } else {
+            while (eyeLoc.toVector().distanceSquared(res.getHitPosition()) > 2) {
+                eyeLoc = eyeLoc.add(eyeLoc.getDirection().normalize());
+                world.spawnParticle(Particle.HEART, eyeLoc, 5);
+            }
+        }
+        var oa = Arena.arenaOf(player);
+        if (!oa.isPresent() || onHit(player, oa.orElseThrow(), res.getHitPosition().toLocation(world)))
+            updateUses(item);
+        
+        cooldowns.put(player.getUniqueId(), now + 1000 * 20);
     }
 
     private void updateUses(ItemStack item){
@@ -62,24 +81,6 @@ public class ThrowingJuiceUse implements Listener {
                 return;
             }
         }
-    }
-
-    private void shootBeam(Player shooter, ItemStack item){
-        World world = shooter.getWorld();
-        var eyeLoc = shooter.getEyeLocation();
-        var res = world.rayTraceEntities(eyeLoc.clone().add(eyeLoc.getDirection()), eyeLoc.getDirection(), 50, 0.5);
-        if (res == null) {
-            world.spawnParticle(Particle.ASH, eyeLoc, 15);
-            return;
-        } else {
-            while (eyeLoc.toVector().distanceSquared(res.getHitPosition()) > 2) {
-                eyeLoc = eyeLoc.add(eyeLoc.getDirection().normalize());
-                world.spawnParticle(Particle.HEART, eyeLoc, 5);
-            }
-        }
-        var oa = Arena.arenaOf(shooter);
-        if (!oa.isPresent() || onHit(shooter, oa.orElseThrow(), res.getHitPosition().toLocation(world)))
-            updateUses(item);
     }
 
     private boolean onHit(Player shooter, Arena arena, Location hitLoc){

@@ -1,31 +1,38 @@
 package me.stephenminer.redvblue.events.items;
 
-import me.stephenminer.redvblue.RedBlue;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import org.bukkit.ChatColor;
+import org.bukkit.Color;
+import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.*;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.util.Vector;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import me.stephenminer.redvblue.RedBlue;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 
 public class LongRifleUse implements Listener {
     private final RedBlue plugin;
-    private final Set<UUID> cooldown;
+    private final Map<UUID, Long> cooldowns = new HashMap<>();
+    private final long cooldownDurationMS = 20 * 1000;
 
-    public LongRifleUse(RedBlue plugin){
-        this.plugin = plugin;
-        cooldown = new HashSet<>();
+    public LongRifleUse() {
+        this.plugin = JavaPlugin.getPlugin(RedBlue.class);
     }
 
     @EventHandler
@@ -33,25 +40,40 @@ public class LongRifleUse implements Listener {
         if (!event.hasItem()) return;
         ItemStack item = event.getItem();
         Player player = event.getPlayer();
+        long now = System.currentTimeMillis();
 
-        if (plugin.checkLore(item,"longrifle")){
-            if (!player.isSneaking()){
-                player.spigot().sendMessage(ChatMessageType.ACTION_BAR,new TextComponent(net.md_5.bungee.api.ChatColor.AQUA + "You must be sneaking to shoot!"));
-                return;
-            }
-            if (cooldown.contains(player.getUniqueId())) {
-                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(net.md_5.bungee.api.ChatColor.AQUA + "Ability on Cooldown!"));
-                return;
-            }
-            boolean shoot = checkAndTakeAmmo(player);
-            if (shoot) {
-                fire(player);
-                cooldown.add(player.getUniqueId());
-                runCooldown(player,20);
-            }else {
-                player.sendMessage(ChatColor.RED + "You are missing mana-powder or arrows!");
-            }
+        if (!plugin.checkLore(item,"longrifle")) return;
+        if (!player.isSneaking()){
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR,new TextComponent(net.md_5.bungee.api.ChatColor.AQUA + "You must be sneaking to shoot!"));
+            return;
         }
+        if (cooldowns.containsKey(player.getUniqueId()) && cooldowns.get(player.getUniqueId()) > now) {
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(net.md_5.bungee.api.ChatColor.AQUA + "Ability on Cooldown!"));
+            return;
+        }
+        if (!checkAndTakeAmmo(player)) {
+            player.sendMessage(ChatColor.RED + "You are missing mana-powder or arrows!");
+            return;
+        }
+        
+        Arrow arrow = player.launchProjectile(Arrow.class);
+        arrow.setVelocity(arrow.getVelocity().multiply(3));
+        arrow.setKnockbackStrength(3);
+        new BukkitRunnable(){
+            World world = arrow.getWorld();
+            @Override
+            public void run(){
+                if (arrow.isDead() || arrow.isInBlock()) {
+                    this.cancel();
+                    return;
+                }
+                world.spawnParticle(Particle.DUST,arrow.getLocation(),1,new Particle.DustOptions(Color.AQUA,1));
+            }
+        }.runTaskTimer(plugin,0,1);
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE,2,1);
+
+        cooldowns.put(player.getUniqueId(), now + cooldownDurationMS);
+        updateCooldownExpBar(player);
     }
 
 
@@ -78,16 +100,6 @@ public class LongRifleUse implements Listener {
         }.runTaskTimer(plugin,0,1);
     }
 
-
-    @EventHandler
-    public void onQuit(PlayerQuitEvent event){
-        cooldown.remove(event.getPlayer().getUniqueId());
-    }
-    @EventHandler
-    public void onWorldChange(PlayerChangedWorldEvent event){
-        cooldown.remove(event.getPlayer().getUniqueId());
-    }
-
     private boolean checkAndTakeAmmo(Player player){
         ItemStack powder = null;
         ItemStack arrow = null;
@@ -110,54 +122,25 @@ public class LongRifleUse implements Listener {
         return true;
     }
 
-    private void fire(Player shooter){
-        Vector dir = shooter.getLocation().getDirection();
-        Arrow arrow = shooter.launchProjectile(Arrow.class);
-        arrow.setVelocity(arrow.getVelocity().multiply(3));
-        arrow.setKnockbackStrength(3);
-        new BukkitRunnable(){
-            World world = arrow.getWorld();
-            @Override
-            public void run(){
-                if (arrow.isDead() || arrow.isInBlock()) {
-                    this.cancel();
-                    return;
-                }
-                world.spawnParticle(Particle.DUST,arrow.getLocation(),1,new Particle.DustOptions(Color.AQUA,1));
-            }
-        }.runTaskTimer(plugin,0,1);
-        World world = shooter.getWorld();
-        world.spawnParticle(Particle.ASH,shooter.getEyeLocation().clone().add(dir),10);
-        world.playSound(shooter.getLocation(), Sound.ENTITY_GENERIC_EXPLODE,2,1);
-    }
-
-    /**
-     *
-     * @param player
-     * @param duration - time in ticks
-     */
-    private void runCooldown(Player player, int duration){
-        cooldown.add(player.getUniqueId());
+    private void updateCooldownExpBar(Player player) {
+        long donetime = cooldowns.get(player.getUniqueId());
         float exp = player.getExp();
-        new BukkitRunnable(){
-            int count;
+        new BukkitRunnable() {
             @Override
             public void run(){
                 if (!player.isOnline() || player.isDead()){
                     this.cancel();
                     return;
                 }
-                if (count >= duration){
+                long now = System.currentTimeMillis();
+                if (now >= donetime) { //done, reset.
                     player.playSound(player,Sound.BLOCK_IRON_TRAPDOOR_OPEN,2.5f,1);
                     player.playSound(player,Sound.BLOCK_IRON_TRAPDOOR_CLOSE,2.5f,1);
                     player.setExp(exp);
-                    cooldown.remove(player.getUniqueId());
                     this.cancel();
                     return;
                 }
-                float ratio = ((float) count) / duration;
-                player.setExp(ratio);
-                count++;
+                player.setExp((donetime - now) / cooldownDurationMS);
             }
         }.runTaskTimer(plugin, 0, 1);
     }
