@@ -63,7 +63,7 @@ public class ThrowingJuiceUse implements Listener {
         if (!oa.isPresent() || onHit(player, oa.orElseThrow(), res.getHitPosition().toLocation(world)))
             updateUses(item);
         
-        cooldowns.put(player.getUniqueId(), now + 1000 * 20);
+        cooldowns.put(player.getUniqueId(), now + 1000 * 5);
     }
 
     private void updateUses(ItemStack item){

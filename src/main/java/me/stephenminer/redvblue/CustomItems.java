@@ -42,7 +42,8 @@ public enum CustomItems {
     )),
     THROWINGJUICE(Material.NETHER_STAR, ChatColor.YELLOW + "Throwing Juice (3 uses)", List.of(
         ChatColor.ITALIC + "A hearty way to help a friend!",
-        ChatColor.YELLOW + "Right-Click Shoot an AOE healing beam",
+        ChatColor.ITALIC + "Shoot an AOE healing beam",
+        ChatColor.YELLOW + "Right-Click to Use",
         ChatColor.BLACK + "throwingjuice"
     ), (meta) -> {
         meta.getPersistentDataContainer().set(ThrowingJuiceUse.USES, PersistentDataType.INTEGER, 3);
@@ -69,10 +70,9 @@ public enum CustomItems {
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
     }),
     WINDSCROLL(Material.CREEPER_BANNER_PATTERN, ChatColor.AQUA + "" + ChatColor.BOLD + "Wind Scroll", List.of(
-        ChatColor.ITALIC + "Wind crashes into your face as" ,
-        ChatColor.ITALIC + "you open the scroll" ,
+        ChatColor.ITALIC + "Wind crashes into your face as",
+        ChatColor.ITALIC + "you open the scroll",
         ChatColor.YELLOW + "Right-Click to Use",
-        ChatColor.YELLOW + "20 second cooldown",
         ChatColor.BLACK + "windscroll"
     ), (meta) -> {
         meta.addEnchant(Enchantment.MENDING,1,true);
