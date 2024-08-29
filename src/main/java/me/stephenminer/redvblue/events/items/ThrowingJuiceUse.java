@@ -54,9 +54,9 @@ public class ThrowingJuiceUse implements Listener {
             world.spawnParticle(Particle.ASH, eyeLoc, 15);
             return;
         } else {
-            while (eyeLoc.toVector().distanceSquared(res.getHitPosition()) > 2) {
+            while (eyeLoc.toVector().distanceSquared(res.getHitPosition()) > 1.5) {
                 eyeLoc = eyeLoc.add(eyeLoc.getDirection().normalize());
-                world.spawnParticle(Particle.HEART, eyeLoc, 5);
+                world.spawnParticle(Particle.HEART, eyeLoc, 2);
             }
         }
         var oa = Arena.arenaOf(player);
