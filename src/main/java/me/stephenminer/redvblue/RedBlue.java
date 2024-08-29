@@ -56,8 +56,8 @@ public final class RedBlue extends JavaPlugin {
         pm.registerEvents(new PlayerHandling(this), this);
         // pm.registerEvents(new GuiEvents(this), this);
         pm.registerEvents(new ArenaSetup(this), this);
-        pm.registerEvents(new LongRifleUse(this), this);
-        pm.registerEvents(new ThrowingJuiceUse(this), this);
+        pm.registerEvents(new LongRifleUse(), this);
+        pm.registerEvents(new ThrowingJuiceUse(), this);
         pm.registerEvents(new WindScrollUse(), this);
         pm.registerEvents(new ChestSetupEvents(), this);
         pm.registerEvents(new ArenaGuiEvents(), this);
