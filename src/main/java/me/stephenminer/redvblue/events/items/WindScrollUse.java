@@ -10,21 +10,15 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 
-import me.stephenminer.redvblue.RedBlue;
+import me.stephenminer.redvblue.CustomItems;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 
 public class WindScrollUse implements Listener {
-    private final RedBlue plugin;
     private final Map<UUID, Long> cooldowns = new HashMap<>();
-
-    public WindScrollUse() {
-        this.plugin = JavaPlugin.getPlugin(RedBlue.class);
-    }
 
     @EventHandler
     public void useScroll(PlayerInteractEvent event) {
@@ -36,7 +30,7 @@ public class WindScrollUse implements Listener {
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR,new TextComponent(ChatColor.AQUA + "Ability on Cooldown!"));
             return;
         }
-        if (!plugin.checkLore(item,"windscroll")) return;
+        if (!CustomItems.WINDSCROLL.is(item)) return;
 
         var eyeLoc = player.getEyeLocation();
         var res = player.getWorld().rayTraceEntities(eyeLoc.clone().add(eyeLoc.getDirection()), eyeLoc.getDirection(), 20, 0.3);
@@ -44,7 +38,7 @@ public class WindScrollUse implements Listener {
             player.getWorld().spawnParticle(Particle.ASH, eyeLoc, 15);
             return;
         } else
-            res.getHitEntity().setVelocity(eyeLoc.getDirection().multiply(5).add(new Vector(0, 2, 0)));
+            res.getHitEntity().setVelocity(eyeLoc.getDirection().multiply(2).add(new Vector(0, 1, 0)));
         
         if (player.isSneaking() && consumeMana(player)) {
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.AQUA + "" + ChatColor.BOLD + "Skipped Cooldown!"));
@@ -56,7 +50,7 @@ public class WindScrollUse implements Listener {
     private boolean consumeMana(Player player) {
         for (ItemStack item : player.getInventory().getContents()){
             if (item == null) continue;
-            if (plugin.checkLore(item,"manapowder")) {
+            if (CustomItems.MANAPOWDER.is(item)) {
                 item.setAmount(item.getAmount()-1);
                 return true;
             }

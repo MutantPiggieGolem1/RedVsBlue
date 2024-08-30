@@ -10,7 +10,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -122,12 +121,6 @@ public final class RedBlue extends JavaPlugin {
             e.printStackTrace();
         }
         return null;
-    }
-
-    public boolean checkLore(ItemStack item, String check) {
-        if (item == null || !item.hasItemMeta() || !item.getItemMeta().hasLore()) return false;
-        var lore = item.getItemMeta().getLore();
-        return lore.get(lore.size() - 1).equals(ChatColor.BLACK + check.toLowerCase());
     }
 
     public List<String> filter(Collection<String> base, String match) {

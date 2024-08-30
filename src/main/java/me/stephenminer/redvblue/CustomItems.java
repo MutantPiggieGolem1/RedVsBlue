@@ -18,9 +18,6 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
-import org.bukkit.persistence.PersistentDataType;
-
-import me.stephenminer.redvblue.events.items.ThrowingJuiceUse;
 
 public enum CustomItems {
     ARENAWAND(Material.WOODEN_SHOVEL, ChatColor.GOLD + "Arena Wand", List.of(
@@ -29,7 +26,7 @@ public enum CustomItems {
         ChatColor.YELLOW + "Right-Click set pos2",
         ChatColor.BLACK + "arena-wand"
     )),
-    WALLWAND(Material.STONE_SHOVEL, ChatColor.GOLD + "Wall Wand", List.of(
+    WALLWAND(Material.STONE_SHOVEL, ChatColor.GOLD + "Wall-Maker Wand", List.of(
         ChatColor.ITALIC + "For adding a wall to your arenas!",
         ChatColor.YELLOW + "Left-Click set pos1",
         ChatColor.YELLOW + "Right-Click set pos2",
@@ -40,43 +37,38 @@ public enum CustomItems {
         ChatColor.YELLOW + "Right-Click set pos2",
         ChatColor.BLACK + "wall-remover"
     )),
-    THROWINGJUICE(Material.NETHER_STAR, ChatColor.YELLOW + "Throwing Juice (3 uses)", List.of(
+    THROWINGJUICE(Material.NETHER_STAR, ChatColor.DARK_AQUA + "Throwing Juice", List.of(
         ChatColor.ITALIC + "A hearty way to help a friend!",
         ChatColor.ITALIC + "Shoot an AOE healing beam",
         ChatColor.YELLOW + "Right-Click to Use",
         ChatColor.BLACK + "throwingjuice"
     ), (meta) -> {
-        meta.getPersistentDataContainer().set(ThrowingJuiceUse.USES, PersistentDataType.INTEGER, 3);
         meta.addEnchant(Enchantment.THORNS, ThreadLocalRandom.current().nextInt(4) + 1, true);
-        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
     }),
-    LONGRIFLE(Material.WOODEN_HOE, ChatColor.LIGHT_PURPLE + "Dwarf Long-Rifle", List.of(
+    LONGRIFLE(Material.WOODEN_HOE, ChatColor.DARK_GREEN + "" + ChatColor.ITALIC + "Dwarf Long-Rifle", List.of(
         ChatColor.ITALIC + "Latest dwarf innovation! Combine arrows with mana!",
         ChatColor.ITALIC + "Watch out for the recoil!",
-        ChatColor.YELLOW + "Requires mana powder & arrows to use",
-        ChatColor.YELLOW + "R-Click while shifting: Shoot",
+        ChatColor.YELLOW + "Requires mana powder & arrows",
+        ChatColor.YELLOW + "Right-Click & Sneak to Use",
         ChatColor.BLACK + "longrifle"
     ), (meta) -> {
         meta.addEnchant(Enchantment.PROTECTION,4, true);
-        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
     }),
-    MANAPOWDER(Material.GUNPOWDER, ChatColor.AQUA + "Mana-Powder", List.of(
+    MANAPOWDER(Material.GUNPOWDER, ChatColor.LIGHT_PURPLE + "" + ChatColor.ITALIC + "Mana-Powder", List.of(
         ChatColor.ITALIC + "Not that knife ear mana!",
         ChatColor.ITALIC + "This is good dwarf mana!",
         ChatColor.YELLOW + "Ammo for mana-powered weapons",
         ChatColor.BLACK + "manapowder"
     ), (meta) -> {
         meta.addEnchant(Enchantment.KNOCKBACK,2, true);
-        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
     }),
-    WINDSCROLL(Material.CREEPER_BANNER_PATTERN, ChatColor.AQUA + "" + ChatColor.BOLD + "Wind Scroll", List.of(
+    WINDSCROLL(Material.CREEPER_BANNER_PATTERN, ChatColor.DARK_BLUE + "" + ChatColor.ITALIC + "Wind Scroll", List.of(
         ChatColor.ITALIC + "Wind crashes into your face as",
         ChatColor.ITALIC + "you open the scroll",
         ChatColor.YELLOW + "Right-Click to Use",
         ChatColor.BLACK + "windscroll"
     ), (meta) -> {
         meta.addEnchant(Enchantment.MENDING,1,true);
-        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
     });
 
     public final ItemStack mcitem;
@@ -88,12 +80,20 @@ public enum CustomItems {
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName(displayName);
         meta.setLore(lore);
+        meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_UNBREAKABLE, ItemFlag.HIDE_ENCHANTS);
         meta.setUnbreakable(true);
         if (callback != null) callback.run(meta);
         item.setItemMeta(meta);
         this.mcitem = item;
     }
 
+    public boolean is(ItemStack toCheck) {
+        if (toCheck == null || !toCheck.hasItemMeta() || !toCheck.getItemMeta().hasLore()) return false;
+        if (toCheck.getType() != mcitem.getType()) return false;
+        var other = toCheck.getItemMeta();
+        var mine = mcitem.getItemMeta();
+        return other.getLore().equals(mine.getLore());
+    }
 
     private static ItemStack teamPants(int team){
         ItemStack item = new ItemStack(Material.LEATHER_LEGGINGS);

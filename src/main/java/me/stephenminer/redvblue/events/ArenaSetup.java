@@ -26,6 +26,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BlockVector;
 
 import me.stephenminer.redvblue.BlockRange;
+import me.stephenminer.redvblue.CustomItems;
 import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.arena.Wall;
 
@@ -53,7 +54,7 @@ public class ArenaSetup implements Listener {
         if (!event.hasItem() || event.getAction() == Action.PHYSICAL) return;
         Player player = event.getPlayer();
         ItemStack item = event.getItem();
-        if (plugin.checkLore(item, "arena-wand")){
+        if (CustomItems.ARENAWAND.is(item)){
             Action action = event.getAction();
             UUID uuid = player.getUniqueId();
             event.setCancelled(true);
@@ -125,7 +126,7 @@ public class ArenaSetup implements Listener {
         if (!event.hasItem() || event.getAction() == Action.PHYSICAL) return;
         Player player = event.getPlayer();
         ItemStack item = event.getItem();
-        if (plugin.checkLore(item, "wall-wand")) {
+        if (CustomItems.WALLWAND.is(item)) {
             Action action = event.getAction();
             UUID uuid = player.getUniqueId();
             event.setCancelled(true);
@@ -218,7 +219,7 @@ public class ArenaSetup implements Listener {
     public void deleteWallLocs(BlockBreakEvent event){
         Player player = event.getPlayer();
         ItemStack item = event.getPlayer().getInventory().getItemInMainHand();
-        if (plugin.checkLore(item, "wall-remover")){
+        if (CustomItems.WALLREMOVER.is(item)){
             event.setCancelled(true);
             var sArena = findArena(event.getBlock().getLocation());
             if (sArena == null) {

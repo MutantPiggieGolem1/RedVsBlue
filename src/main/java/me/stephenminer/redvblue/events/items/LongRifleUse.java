@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -21,6 +22,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import me.stephenminer.redvblue.CustomItems;
 import me.stephenminer.redvblue.RedBlue;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -41,7 +43,7 @@ public class LongRifleUse implements Listener {
         Player player = event.getPlayer();
         long now = System.currentTimeMillis();
 
-        if (!plugin.checkLore(item,"longrifle")) return;
+        if (!CustomItems.LONGRIFLE.is(item)) return;
         if (!player.isSneaking()){
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR,new TextComponent(net.md_5.bungee.api.ChatColor.AQUA + "You must be sneaking to shoot!"));
             return;
@@ -77,35 +79,25 @@ public class LongRifleUse implements Listener {
 
 
     @EventHandler
-    public void onCrouch(PlayerToggleSneakEvent event){
-        if (!event.isSneaking()) return;
-        Player player = event.getPlayer();
-        ItemStack main = player.getInventory().getItemInMainHand();
-        new BukkitRunnable(){
-            @Override
-            public void run() {
-                if (!player.isOnline() || player.isDead() || !player.isSneaking()){
-                    this.cancel();
-                    if (player.isOnline()) player.removePotionEffect(PotionEffectType.SLOWNESS);
-                }
-                if (plugin.checkLore(main,"longrifle")){
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS,5,5));
-                }else{
-                    player.removePotionEffect(PotionEffectType.SLOWNESS);
-                    this.cancel();
-                    return;
-                }
-            }
-        }.runTaskTimer(plugin,0,1);
+    public void onCrouch(PlayerToggleSneakEvent event) {onScopeChange(event.getPlayer());}
+    @EventHandler
+    public void onItemSwap(PlayerItemHeldEvent event) {onScopeChange(event.getPlayer());}
+
+    private void onScopeChange(Player player) {
+        ItemStack item = player.getInventory().getItemInMainHand();
+        if (player.isSneaking() && CustomItems.LONGRIFLE.is(item)) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, PotionEffect.INFINITE_DURATION, 5, false, false));
+        } else {
+            player.removePotionEffect(PotionEffectType.SLOWNESS);
+        }
     }
 
     private boolean checkAndTakeAmmo(Player player){
         ItemStack powder = null;
         ItemStack arrow = null;
-        ItemStack[] items = player.getInventory().getContents();
-        for (ItemStack item : items){
+        for (ItemStack item : player.getInventory().getContents()){
             if (item == null) continue;
-            if (plugin.checkLore(item,"manapowder")) {
+            if (CustomItems.MANAPOWDER.is(item)) {
                 powder = item;
                 continue;
             }
@@ -126,7 +118,7 @@ public class LongRifleUse implements Listener {
         float exp = player.getExp();
         new BukkitRunnable() {
             @Override
-            public void run(){
+            public void run() {
                 if (!player.isOnline() || player.isDead()){
                     this.cancel();
                     return;
@@ -139,7 +131,7 @@ public class LongRifleUse implements Listener {
                     this.cancel();
                     return;
                 }
-                player.setExp((donetime - now) / cooldownDurationMS);
+                player.setExp(1 - ( (donetime - now) / cooldownDurationMS ));
             }
         }.runTaskTimer(plugin, 0, 1);
     }
