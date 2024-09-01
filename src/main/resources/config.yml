@@ -1,5 +1,4 @@
 settings:
   min-players: 2
   max-players: 28
-  wall-time: 600
   roll-bound: 1000

@@ -8,6 +8,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.commands.CommandTreeHandler.HandledCommand;
+import me.stephenminer.redvblue.util.ArenaConfigUtil;
 
 public class Reload implements HandledCommand {
 
@@ -26,6 +27,7 @@ public class Reload implements HandledCommand {
         var plugin = JavaPlugin.getPlugin(RedBlue.class);
         plugin.reloadConfig();
         plugin.arenas.reloadConfig();
+        ArenaConfigUtil.reloadArenaConfigs();
         sender.sendMessage(ChatColor.GREEN + "Reloaded Files");
         return true;
     }

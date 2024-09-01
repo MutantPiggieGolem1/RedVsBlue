@@ -9,6 +9,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import me.stephenminer.redvblue.ArenaSelector;
 import me.stephenminer.redvblue.arena.Arena;
 import me.stephenminer.redvblue.commands.CommandTreeHandler.HandledCommand;
 import me.stephenminer.redvblue.util.ArenaConfigUtil;
@@ -25,7 +26,11 @@ public class JoinArena implements HandledCommand {
         boolean isSame = false; // whether the command is targeting someone else
         Player target;
         if (sender instanceof Player p) {
-            if (args.length > 1 && p.hasPermission("rvb.commands.join.others")) {
+            if (args.length == 0) {
+                ArenaSelector gui = new ArenaSelector();
+                gui.display(p);
+                return true;
+            } else if (args.length > 1 && p.hasPermission("rvb.commands.join.others")) {
                 target = Bukkit.getPlayer(args[1]);
             } else target = p;
             if (target.getUniqueId().equals(p.getUniqueId())) isSame = true;
@@ -48,7 +53,7 @@ public class JoinArena implements HandledCommand {
         var aid = args[0].toLowerCase();
         Arena arena = findOrCreateArena(aid);
         if (arena == null) {
-            sender.sendMessage(ChatColor.RED + "Arena '" + aid + "'' does not exist!");
+            sender.sendMessage(ChatColor.RED + "Arena '" + aid + "' does not exist!");
             return false;
         }
         arena.addPlayer(target);

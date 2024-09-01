@@ -53,7 +53,7 @@ public record BlockRange(World world, BlockVector p1, BlockVector p2) implements
     @Override
     public Map<String, Object> serialize() {
         return Map.of(
-            "world", world.getUID(),
+            "world", world.getUID().toString(),
             "p1", p1.serialize(),
             "p2", p2.serialize()
         );
@@ -64,7 +64,7 @@ public record BlockRange(World world, BlockVector p1, BlockVector p2) implements
     @SuppressWarnings("unchecked")
     public BlockRange(Map<String, Object> dat) {
         this(
-            Bukkit.getWorld((UUID) dat.get("world")),
+            Bukkit.getWorld(UUID.fromString((String) dat.get("world"))),
             BlockVector.deserialize((Map<String,Object>) dat.get("p1")),
             BlockVector.deserialize((Map<String,Object>) dat.get("p2"))
         );

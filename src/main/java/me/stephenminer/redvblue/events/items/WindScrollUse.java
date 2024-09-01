@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.bukkit.Color;
 import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -33,9 +34,9 @@ public class WindScrollUse implements Listener {
         if (!CustomItems.WINDSCROLL.is(item)) return;
 
         var eyeLoc = player.getEyeLocation();
-        var res = player.getWorld().rayTraceEntities(eyeLoc.clone().add(eyeLoc.getDirection()), eyeLoc.getDirection(), 20, 0.3);
+        var res = player.getWorld().rayTraceEntities(eyeLoc, eyeLoc.getDirection(), 20, 0.3, (e) -> !(e instanceof Player p && p.getUniqueId().equals(player.getUniqueId())));
         if (res == null) {
-            player.getWorld().spawnParticle(Particle.ASH, eyeLoc, 15);
+            player.getWorld().spawnParticle(Particle.DUST, eyeLoc, 15, new Particle.DustOptions(Color.GRAY, 2));
             return;
         } else
             res.getHitEntity().setVelocity(eyeLoc.getDirection().multiply(2).add(new Vector(0, 1, 0)));

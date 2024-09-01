@@ -43,7 +43,7 @@ public class LeaveArena implements HandledCommand {
             sender.sendMessage((isSame ? "You are" : "'" + target.getName() + "' is") + " not in an arena!");
             return false;
         }
-        Arena a = oa.orElseThrow();
+        Arena a = oa.get();
 
         a.removePlayer(target);
         sender.sendMessage(ChatColor.GREEN + "Removed " + (isSame ? "you" : "'" + target.getName() + "'") + " from arena '" + a.getId() + "'!");

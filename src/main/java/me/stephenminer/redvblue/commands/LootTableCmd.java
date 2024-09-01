@@ -29,7 +29,10 @@ public class LootTableCmd implements CommandExecutor, TabCompleter {
                 return false;
             }
             int size = args.length;
-            if (size < 1) player.sendMessage(ChatColor.RED + "You need to input a subcommand!");
+            if (size < 1) {
+                player.sendMessage(ChatColor.RED + "You need to input a subcommand!");
+                return false;
+            }
             String sub = args[0].toLowerCase();
             //create
             if (sub.equals("create")){

@@ -1,21 +1,18 @@
 package me.stephenminer.redvblue.arena.chests;
 
-import me.stephenminer.redvblue.RedBlue;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
 
-public class LootTableEditor {
+public class LootTableEditor implements InventoryHolder {
     public static HashMap<UUID, LootTableEditor> sessions = new HashMap<>();
-    private final RedBlue plugin;
     private Inventory gui;
     private NewLootTable table;
-    private String id;
     private boolean definingChance;
     /**
      * The identifier for the item currently having its chance defined. Null if this isnt happening
@@ -23,8 +20,6 @@ public class LootTableEditor {
     private String chanceItem;
 
     public LootTableEditor(String id){
-        this.plugin = JavaPlugin.getPlugin(RedBlue.class);
-        this.id = id;
         this.table = new NewLootTable(id);
         gui = Bukkit.createInventory(null, 54,id + " loot-table");
     }
@@ -124,5 +119,10 @@ public class LootTableEditor {
 
     public void setDefiningChance(boolean definingChance) { this.definingChance = definingChance; }
     public Inventory gui(){ return gui; }
+
+    @Override
+    public Inventory getInventory() {
+        return gui;
+    }
 
 }

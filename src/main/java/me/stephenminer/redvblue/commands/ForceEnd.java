@@ -31,14 +31,14 @@ public class ForceEnd implements HandledCommand {
                     sender.sendMessage(ChatColor.RED + "You must be in an arena or provide an arena id.");
                     return false;
                 }
-                a = oa.orElseThrow();
+                a = oa.get();
             } else {
                 sender.sendMessage("If not a player, you must provide an arena id.");
                 return false;
             }
         } else {
             String id = args[0].toLowerCase();
-            a = Arena.arenaOf(id).orElseThrow();
+            a = Arena.arenaOf(id).get();
         }
         if (!a.isStarted()) {
             sender.sendMessage(ChatColor.RED + "You cannot end an arena that hasn't started!");

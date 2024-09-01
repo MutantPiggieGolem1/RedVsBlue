@@ -58,7 +58,6 @@ public class LongRifleUse implements Listener {
         
         Arrow arrow = player.launchProjectile(Arrow.class);
         arrow.setVelocity(arrow.getVelocity().multiply(3));
-        arrow.setKnockbackStrength(3);
         new BukkitRunnable(){
             @Override
             public void run(){
@@ -77,13 +76,24 @@ public class LongRifleUse implements Listener {
 
 
     @EventHandler
-    public void onCrouch(PlayerToggleSneakEvent event) {onScopeChange(event.getPlayer());}
+    public void onCrouch(PlayerToggleSneakEvent event) {
+        Player player = event.getPlayer();
+        ItemStack item1 = player.getInventory().getItemInMainHand();
+        ItemStack item2 = player.getInventory().getItemInOffHand();
+        if (event.isSneaking() && (CustomItems.LONGRIFLE.is(item1) || CustomItems.LONGRIFLE.is(item2))) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, PotionEffect.INFINITE_DURATION, 5, false, false));
+        } else {
+            player.removePotionEffect(PotionEffectType.SLOWNESS);
+        }
+    }
     @EventHandler
-    public void onItemSwap(PlayerItemHeldEvent event) {onScopeChange(event.getPlayer());}
-
-    private void onScopeChange(Player player) {
-        ItemStack item = player.getInventory().getItemInMainHand();
-        if (player.isSneaking() && CustomItems.LONGRIFLE.is(item)) {
+    public void onItemSwap(PlayerItemHeldEvent event) {
+        Player player = event.getPlayer();
+        ItemStack item1 = player.getInventory().getItem(event.getNewSlot());
+        if (CustomItems.LONGRIFLE.is(item1))
+            updateCooldownExpBar(player);
+        ItemStack item2 = player.getInventory().getItemInOffHand();
+        if (player.isSneaking() && (CustomItems.LONGRIFLE.is(item1) || CustomItems.LONGRIFLE.is(item2))) {
             player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, PotionEffect.INFINITE_DURATION, 5, false, false));
         } else {
             player.removePotionEffect(PotionEffectType.SLOWNESS);
@@ -112,12 +122,14 @@ public class LongRifleUse implements Listener {
     }
 
     private void updateCooldownExpBar(Player player) {
-        long donetime = cooldowns.get(player.getUniqueId());
+        Long donetime = cooldowns.get(player.getUniqueId());
+        if (donetime == null || System.currentTimeMillis() >= donetime) return;
         float exp = player.getExp();
         new BukkitRunnable() {
             @Override
             public void run() {
-                if (!player.isOnline() || player.isDead()){
+                if (!player.isOnline() || player.isDead() || !CustomItems.LONGRIFLE.is(player.getInventory().getItemInMainHand())){
+                    player.setExp(exp);
                     this.cancel();
                     return;
                 }
@@ -129,7 +141,7 @@ public class LongRifleUse implements Listener {
                     this.cancel();
                     return;
                 }
-                player.setExp(1 - ( (donetime - now) / cooldownDurationMS ));
+                player.setExp( (donetime - now) / (float)cooldownDurationMS );
             }
         }.runTaskTimer(plugin, 0, 1);
     }

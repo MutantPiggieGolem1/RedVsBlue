@@ -4,8 +4,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.bukkit.Color;
 import org.bukkit.Particle;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -37,12 +39,12 @@ public class ThrowingJuiceUse implements Listener {
         
         var world = player.getWorld();
         var eyeLoc = player.getEyeLocation();
-        var res = world.rayTraceEntities(eyeLoc.clone().add(eyeLoc.getDirection()), eyeLoc.getDirection(), 50, 0.5);
+        var res = world.rayTraceEntities(eyeLoc, eyeLoc.getDirection(), 50, 0.5, (e) -> !(e instanceof Player p && p.getUniqueId().equals(player.getUniqueId())) && !(e instanceof Item));
         if (res == null) {
-            world.spawnParticle(Particle.ASH, eyeLoc, 15);
+            world.spawnParticle(Particle.DUST, eyeLoc, 15, new Particle.DustOptions(Color.GRAY, 2));
             return;
         } else {
-            while (eyeLoc.toVector().distanceSquared(res.getHitPosition()) > 1.5) {
+            while (eyeLoc.toVector().distanceSquared(res.getHitPosition()) > 1) {
                 eyeLoc = eyeLoc.add(eyeLoc.getDirection().normalize());
                 world.spawnParticle(Particle.HEART, eyeLoc, 2);
             }
@@ -56,8 +58,8 @@ public class ThrowingJuiceUse implements Listener {
             Player p = (Player) e;
             var oa2 = Arena.arenaOf(p);
             if (oa.isPresent() != oa2.isPresent()) return; // In-arena can't affect out-arena, and vice versa
-            if (oa.isPresent() && oa.orElseThrow().equals(oa2.orElseThrow()) && teamsMatchNaive(player, p)) return;
-            p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,1,0));
+            if (oa.isPresent() && oa.get().equals(oa2.get()) && teamsMatchNaive(player, p)) return;
+            p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,50,3));
         }
         
         item.setAmount(item.getAmount() - 1);

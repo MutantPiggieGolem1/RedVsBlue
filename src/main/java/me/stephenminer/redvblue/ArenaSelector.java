@@ -13,6 +13,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import me.stephenminer.redvblue.arena.Arena;
@@ -22,8 +23,8 @@ public class ArenaSelector implements InventoryHolder {
     private final RedBlue plugin;
     private final Inventory inv;
 
-    public ArenaSelector(RedBlue plugin) {
-        this.plugin = plugin;
+    public ArenaSelector() {
+        this.plugin = JavaPlugin.getPlugin(RedBlue.class);
         this.inv = Bukkit.createInventory(null, 18, ChatColor.AQUA + "Arena Selector");
     }
 
@@ -32,12 +33,8 @@ public class ArenaSelector implements InventoryHolder {
         scheduleRefreshes();
     }
 
-    private int refresherID = -1;
     private void scheduleRefreshes() {
-        var sched = Bukkit.getScheduler();
-        if (sched.isCurrentlyRunning(refresherID)) return;
-        if (sched.isQueued(refresherID)) sched.cancelTask(refresherID);
-        refresherID = new BukkitRunnable() {
+        new BukkitRunnable() {
             @Override
             public void run() {
                 if (inv.getViewers().isEmpty()) {
@@ -50,7 +47,7 @@ public class ArenaSelector implements InventoryHolder {
                     }
                 }
             }
-        }.runTaskTimer(plugin, 0, 100).getTaskId();
+        }.runTaskTimer(plugin, 0, 100);
     }
 
     private ItemStack arenaIcon(String id) {

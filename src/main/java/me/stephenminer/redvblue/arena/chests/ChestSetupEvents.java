@@ -2,12 +2,10 @@ package me.stephenminer.redvblue.arena.chests;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -19,11 +17,10 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.BoundingBox;
-import org.bukkit.util.Vector;
 
 import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.arena.Arena;
+import me.stephenminer.redvblue.util.ArenaConfigUtil;
 
 public class ChestSetupEvents implements Listener {
     private final RedBlue plugin;
@@ -52,11 +49,11 @@ public class ChestSetupEvents implements Listener {
     public void removeChest(BlockBreakEvent event){
         Player player = event.getPlayer();
         if (!player.hasPermission("rvb.lootchests.remove")) return;
-        String regionId = regionIn(event.getBlock());
-        if (Arena.arenaOf(regionId).isPresent()) return;
-        boolean removed = removeFromArena(regionId, event.getBlock().getLocation());
+        var arena = ArenaConfigUtil.findOnFileDeep(event.getBlock().getLocation());
+        if (arena == null || Arena.arenaOf(arena.id()).isPresent()) return;
+        boolean removed = removeFromArena(arena.id(), event.getBlock().getLocation());
         if (removed){
-            player.sendMessage(ChatColor.GREEN + "Removed lootchest from " + regionId);
+            player.sendMessage(ChatColor.GREEN + "Removed lootchest from " + arena.id());
         }
     }
 
@@ -71,8 +68,8 @@ public class ChestSetupEvents implements Listener {
     private NewLootChest parseData(Location loc, ItemStack item){
         Material mat = item.getType();
         if (!isChestItem(item)) return null;
-        String arenaId = regionIn(loc.getBlock());
-        if (arenaId == null) return null;
+        var arena = ArenaConfigUtil.findOnFileDeep(loc);
+        if (arena == null) return null;
         List<String> lore = item.getItemMeta().getLore();
         //dataStr = "table1,table2,etc";
         String dataStr = null;
@@ -85,25 +82,8 @@ public class ChestSetupEvents implements Listener {
         if (dataStr != null){
             List<String> tables = new ArrayList<>(List.of(dataStr.split(",")));
             NewLootChest lootChest = new NewLootChest(mat, loc, tables);
-            saveToArena(arenaId, lootChest);
+            saveToArena(arena.id(), lootChest);
             return lootChest;
-        }
-        return null;
-    }
-
-
-    private String regionIn(Block block){
-        Set<String> ids = plugin.arenas.getConfig().getConfigurationSection("arenas").getKeys(false);
-        Vector v1 = block.getLocation().toVector();
-        Vector v2 = v1.clone().add(new Vector(1,1,1));
-        for (String id : ids){
-            String path = "arenas." + id;
-            Location loc1 = plugin.fromString(plugin.arenas.getConfig().getString(path + ".loc1"));
-            Location loc2 = plugin.fromString(plugin.arenas.getConfig().getString(path + ".loc2"));
-            BoundingBox box = BoundingBox.of(loc1, loc2);
-            if (box.overlaps(v1, v2)){
-                return id;
-            }
         }
         return null;
     }
@@ -195,9 +175,9 @@ public class ChestSetupEvents implements Listener {
         player.sendMessage(ChatColor.RED + "Try again. The number you input must be in integer form, from 1-1000");
     }
 
-    @EventHandler(ignoreCancelled = false)
-    public void blockGlitch(BlockPlaceEvent event){
-        if (!event.isCancelled()) return;
-        Block block = event.getBlock();
-    }
+    // @EventHandler(ignoreCancelled = false)
+    // public void blockGlitch(BlockPlaceEvent event){
+    //     if (!event.isCancelled()) return;
+    //     Block block = event.getBlock();
+    // }
 }

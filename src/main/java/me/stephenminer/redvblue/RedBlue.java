@@ -17,6 +17,7 @@ import me.stephenminer.redvblue.arena.chests.ChestSetupEvents;
 import me.stephenminer.redvblue.commands.*;
 import me.stephenminer.redvblue.events.*;
 import me.stephenminer.redvblue.events.items.*;
+import me.stephenminer.redvblue.util.ArenaConfigUtil;
 import me.stephenminer.redvblue.util.ConfigFile;
 
 public final class RedBlue extends JavaPlugin {
@@ -30,6 +31,7 @@ public final class RedBlue extends JavaPlugin {
         this.tables = new ConfigFile(this, "loot-tables");
         registerCommands();
         registerEvents();
+        ArenaConfigUtil.reloadArenaConfigs();
     }
 
     @Override

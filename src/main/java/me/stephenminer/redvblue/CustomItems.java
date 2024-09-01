@@ -23,20 +23,20 @@ import me.stephenminer.redvblue.util.MetadataCallback;
 
 public enum CustomItems {
     ARENAWAND(Material.WOODEN_SHOVEL, ChatColor.GOLD + "Arena Wand", List.of(
-        ChatColor.ITALIC + "Sets corners for the arena",
+        ChatColor.ITALIC + "Sets corners for an arena",
         ChatColor.YELLOW + "Left-Click set pos1",
         ChatColor.YELLOW + "Right-Click set pos2",
         ChatColor.BLACK + "arena-wand"
     )),
     WALLWAND(Material.STONE_SHOVEL, ChatColor.GOLD + "Wall-Maker Wand", List.of(
-        ChatColor.ITALIC + "For adding a wall to your arenas!",
+        ChatColor.ITALIC + "Sets corners for an arena wall",
         ChatColor.YELLOW + "Left-Click set pos1",
         ChatColor.YELLOW + "Right-Click set pos2",
-        ChatColor.BLACK + "wall-wand")),
+        ChatColor.BLACK + "wall-wand"
+    )),
     WALLREMOVER(Material.STONE_PICKAXE, ChatColor.GOLD + "Wall-Remover Wand", List.of(
-        ChatColor.ITALIC + "For removing walls from your arenas!",
-        ChatColor.YELLOW + "Left-Click set pos1",
-        ChatColor.YELLOW + "Right-Click set pos2",
+        ChatColor.ITALIC + "Selects arena wall to delete",
+        ChatColor.YELLOW + "Left-Click select",
         ChatColor.BLACK + "wall-remover"
     )),
     THROWINGJUICE(Material.NETHER_STAR, ChatColor.DARK_AQUA + "Throwing Juice", List.of(
@@ -49,7 +49,6 @@ public enum CustomItems {
     }),
     LONGRIFLE(Material.WOODEN_HOE, ChatColor.DARK_GREEN + "" + ChatColor.ITALIC + "Dwarf Long-Rifle", List.of(
         ChatColor.ITALIC + "Latest dwarf innovation! Combine arrows with mana!",
-        ChatColor.ITALIC + "Watch out for the recoil!",
         ChatColor.YELLOW + "Requires mana powder & arrows",
         ChatColor.YELLOW + "Right-Click & Sneak to Use",
         ChatColor.BLACK + "longrifle"

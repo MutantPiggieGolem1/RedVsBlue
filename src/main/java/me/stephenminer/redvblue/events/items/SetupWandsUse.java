@@ -2,6 +2,7 @@ package me.stephenminer.redvblue.events.items;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import javax.annotation.Nonnull;
@@ -138,12 +139,12 @@ public class SetupWandsUse implements Listener {
                 if (arena == null) {
                     player.sendMessage(ChatColor.RED + "There is no arena here!");
                     return;
-                } else if (inprog.arena != null && arena != inprog.arena) {
+                } else if (inprog.arena.isPresent() && arena != inprog.arena.get()) {
                     player.sendMessage(ChatColor.RED + "This is a different arena!");
                     return;
                 }
                 
-                inprog.arena = arena;
+                inprog.arena = Optional.of(arena);
                 inprog.b = new BlockVector(loc.toVector());
                 player.sendMessage(ChatColor.GREEN + "Position 2 set!");
                 break;
@@ -157,12 +158,12 @@ public class SetupWandsUse implements Listener {
                 if (arena == null) {
                     player.sendMessage(ChatColor.RED + "There is no arena here!");
                     return;
-                } else if (inprog.arena != null && arena != inprog.arena) {
+                } else if (inprog.arena.isPresent() && arena != inprog.arena.get()) {
                     player.sendMessage(ChatColor.RED + "This is a different arena!");
                     return;
                 }
 
-                inprog.arena = arena;
+                inprog.arena = Optional.of(arena);
                 inprog.a = new BlockVector(loc.toVector());
                 player.sendMessage(ChatColor.GREEN + "Position 1 set!");
                 break;
@@ -189,10 +190,10 @@ public class SetupWandsUse implements Listener {
                 player.sendMessage(ChatColor.YELLOW + "Invalid Material, try again.");
                 return;
             }
-            if (inprog.arena.createWall(mat, inprog.toRange())) {
-                player.sendMessage(ChatColor.GREEN + "Wall created and added to arena '" + inprog.arena.id() + "'!");
+            if (inprog.arena.get().createWall(mat, inprog.toRange())) {
+                player.sendMessage(ChatColor.GREEN + "Wall created and added to arena '" + inprog.arena.get().id() + "'!");
             } else {
-                player.sendMessage(ChatColor.RED + "Wall intersects with another in arena '" + inprog.arena.id() + "'!");
+                player.sendMessage(ChatColor.RED + "Wall intersects with another in arena '" + inprog.arena.get().id() + "'!");
                 return;
             }
         }
@@ -219,7 +220,7 @@ public class SetupWandsUse implements Listener {
             return;
         }
         
-        wToDelete.put(player.getUniqueId(), new WallIdentifier(arena, wall.orElseThrow()));
+        wToDelete.put(player.getUniqueId(), new WallIdentifier(arena, wall.get()));
         player.sendMessage(ChatColor.GREEN + "Type confirm in chat to confirm deletion");
     }
     @EventHandler
@@ -279,14 +280,14 @@ public class SetupWandsUse implements Listener {
     }
     private record WallIdentifier(ArenaConfig arena, BlockRange wall) {}
     private class WallRangeBuilder extends RangeBuilder {
-        public @Nullable ArenaConfig arena;
+        public Optional<ArenaConfig> arena;
 
         public WallRangeBuilder(World w) {
             super(w);
         }
 
         public boolean isDone() {
-            return arena != null && super.isDone();
+            return arena.isPresent() && super.isDone();
         }
     }
 }

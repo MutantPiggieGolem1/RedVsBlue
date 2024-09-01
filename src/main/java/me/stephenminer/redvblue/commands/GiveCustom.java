@@ -44,7 +44,7 @@ public class GiveCustom implements TabExecutor {
             ItemStack item = oi.mcitem.clone();
             Player reciever = player;
             if (size >= 3){
-                reciever = Bukkit.getPlayerExact(args[1]);
+                reciever = Bukkit.getPlayerExact(args[2]);
                 if (reciever == null){
                     player.sendMessage(ChatColor.RED + "Player " + args[2] + " doesn't exist!");
                     return false;

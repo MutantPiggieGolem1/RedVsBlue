@@ -1,5 +1,6 @@
 package me.stephenminer.redvblue.util;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.annotation.Nullable;
@@ -17,15 +18,31 @@ import me.stephenminer.redvblue.arena.ArenaConfig;
  */
 public class ArenaConfigUtil {
     private static final ConfigFile cfgFile = JavaPlugin.getPlugin(RedBlue.class).arenas;
-    private static final ConfigurationSection arenaConfigs = cfgFile.getConfig().getConfigurationSection("arenas");
+    private static ConfigurationSection arenaConfigs = cfgFile.getConfig().getConfigurationSection("arenas");
+
+    public static void reloadArenaConfigs() {
+        var cfg = cfgFile.getConfig();
+        if (!cfg.isConfigurationSection("arenas")) cfg.createSection("arenas");
+        arenaConfigs = cfgFile.getConfig().getConfigurationSection("arenas");
+    }
+
+    public static Set<String> idsOnFileShallow() {
+        return arenaConfigs == null ? Set.of() : arenaConfigs.getKeys(false);
+    }
+
+    private static Set<ArenaConfig> valuesOnFile() {
+        HashSet<ArenaConfig> builder = new HashSet<>();
+        if (arenaConfigs == null) return builder;
+        for (String key : arenaConfigs.getKeys(false)) {
+            var a = arenaConfigs.getObject(key, ArenaConfig.class);
+            if (a != null) builder.add(a); // a will be null for malformed config
+        }
+        return builder;
+    }
 
     /**
      * Expects arena key to correspond with arena id
      */
-    public static Set<String> idsOnFileShallow() {
-        return arenaConfigs.getKeys(false);
-    }
-
     public static boolean existsOnFileShallow(String id) {
         return idsOnFileShallow().contains(id);
     }
@@ -34,7 +51,7 @@ public class ArenaConfigUtil {
      * Does not expect arena key to correspond with arena id
      */
     public static boolean existsOnFileDeep(String id) {
-        return arenaConfigs.getValues(false).values().stream().anyMatch((a) -> ((ArenaConfig) a).id() == id);
+        return valuesOnFile().stream().anyMatch((a) -> a.id() == id);
     }
 
     public static @Nullable ArenaConfig findOnFileShallow(String id) {
@@ -42,10 +59,9 @@ public class ArenaConfigUtil {
     }
 
     public static @Nullable ArenaConfig findOnFileDeep(Location... loc) {
-        for (var arenaEntry : arenaConfigs.getValues(false).entrySet()) {
-            var arenaConfig = (ArenaConfig) arenaEntry.getValue();
+        for (var arena : valuesOnFile()) {
             for (Location l : loc)
-                if (arenaConfig.contains(l)) return arenaConfig;
+                if (arena.contains(l)) return arena;
         }
         return null;
     }
