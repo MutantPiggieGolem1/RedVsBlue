@@ -19,7 +19,7 @@ public class MinPlayers implements HandledCommand {
 
     @Override
     public String permission() {
-        return "rvb.commands.minplayers";
+        return "rvb.commands.config.minplayers";
     }
 
     @Override

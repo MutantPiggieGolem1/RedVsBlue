@@ -63,14 +63,14 @@ public final class RedBlue extends JavaPlugin {
         )));
         register("rvbconfig", new CommandTreeHandler(Map.of(
             "reload", new Reload(),
-            "setminplayers", new MinPlayers(this)
+            "minplayers", new MinPlayers(this)
         )));
         register("rvbgive", new GiveCustom());
 
         // WIP - not yet updated to new command framework
-        register("arena", new ArenaCmd(this));
-        register("chest", new LootChestCmd());
-        register("loot", new LootTableCmd());
+        register("rvbarena", new ArenaCmd(this));
+        register("rvbchest", new LootChestCmd());
+        register("rvbloot", new LootTableCmd());
     }
 
     private void register(String name, CommandExecutor executor) {

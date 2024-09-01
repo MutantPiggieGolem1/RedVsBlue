@@ -4,29 +4,17 @@ main: me.stephenminer.redvblue.RedBlue
 api-version: 1.21
 authors: [ stephenminer, meep, compewper ]
 commands:
-  arenaWand:
-    permission: "rvb.commands.wand"
-  wallWand:
-    permission: "rvb.commands.wand"
-  joinRvB:
-  leaveRvB:
-  arena:
-    permission: "rvb.commands.arena"
-  reloadRvB:
-    permission: "rvb.commands.reload"
-  setWallTime:
-    permission: "rvb.commands.walltime"
-  setMinPlayers:
-    permission: "rvb.commands.minplayers"
-  forceRvb:
-    permission: "rvb.commands.forcestart"
-  rvbGive:
+  rvb:
+
+  rvbconfig:
+    permission: "rvb.commands.config"
+
+  rvbgive:
     permission: "rvb.commands.give"
-  rvbRegen:
-    permission: "rvb.commands.regen"
-  endRvb:
-    permission: "rvb.commands.forceend"
-  rvbloot:
-    permission: "rvb.commands.lootchest"
+  
+  rvbarena:
+    permission: "rvb.commands.arena"
   rvbchest:
+    permission: "rvb.commands.lootchest"
+  rvbloot:
     permission: "rvb.commands.lootchest"

@@ -18,7 +18,7 @@ public class Reload implements HandledCommand {
 
     @Override
     public String permission() {
-        return "rvb.commands.reload";
+        return "rvb.commands.config.reload";
     }
 
     @Override
