@@ -24,8 +24,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BlockVector;
 
 import me.stephenminer.redvblue.CustomItems;
-import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.arena.ArenaConfig;
+import me.stephenminer.redvblue.util.ArenaConfigUtil;
 import me.stephenminer.redvblue.util.BlockRange;
 
 public class SetupWandsUse implements Listener {
@@ -33,12 +33,10 @@ public class SetupWandsUse implements Listener {
     private final Map<UUID, WallRangeBuilder> wToCreate;
     private final Map<UUID, WallIdentifier> wToDelete;
 
-    private final RedBlue plugin;
-    public SetupWandsUse(RedBlue plugin){
+    public SetupWandsUse() {
         aToCreate = new HashMap<>();
         wToCreate = new HashMap<>();
         wToDelete = new HashMap<>();
-        this.plugin = plugin;
     }
     
     // Arena Creation
@@ -91,18 +89,18 @@ public class SetupWandsUse implements Listener {
             player.sendMessage(ChatColor.RED + "Cancelling creation");
         } else {
             String id = msg.trim().replaceAll("[\\s:]+", "_");
-            if (arenaExistsDeep(id)) {
+            if (ArenaConfigUtil.existsOnFileDeep(id)) {
                 player.sendMessage(ChatColor.RED + "That arena already exists, try again.");
                 return;
             }
 
-            ArenaConfig overlap = findArena(inprog.aLoc(), inprog.bLoc());
+            ArenaConfig overlap = ArenaConfigUtil.findOnFileDeep(inprog.aLoc(), inprog.bLoc());
             if (overlap != null) {
                 player.sendMessage(ChatColor.RED + "Area intersects with other arena '" + overlap.id() + "', try again.");
                 return;
             }
             
-            ArenaConfig created = ArenaConfig.builder(id, inprog.toRange(), plugin.arenas);
+            ArenaConfig created = ArenaConfig.builder(id, inprog.toRange());
             if (created == null) {
                 player.sendMessage(ChatColor.RED + "if you're seeing this, something has gone terribly terribly wrong. tell your admins to contact the devs. try again.");
                 return;
@@ -136,7 +134,7 @@ public class SetupWandsUse implements Listener {
                     player.getLocation().getBlock().getLocation() :
                     event.getClickedBlock().getLocation();
     
-                arena = findArena(loc);
+                arena = ArenaConfigUtil.findOnFileDeep(loc);
                 if (arena == null) {
                     player.sendMessage(ChatColor.RED + "There is no arena here!");
                     return;
@@ -155,7 +153,7 @@ public class SetupWandsUse implements Listener {
                     player.getLocation().getBlock().getLocation() :
                     event.getClickedBlock().getLocation();
 
-                arena = findArena(loc);
+                arena = ArenaConfigUtil.findOnFileDeep(loc);
                 if (arena == null) {
                     player.sendMessage(ChatColor.RED + "There is no arena here!");
                     return;
@@ -206,11 +204,10 @@ public class SetupWandsUse implements Listener {
     @EventHandler
     public void deleteWallLocs(BlockBreakEvent event){
         Player player = event.getPlayer();
-        ItemStack item = event.getPlayer().getInventory().getItemInMainHand();
-        if (!CustomItems.WALLREMOVER.is(item)) return;
+        if (!CustomItems.WALLREMOVER.is(player.getInventory().getItemInMainHand())) return;
         event.setCancelled(true);
 
-        var arena = findArena(event.getBlock().getLocation());
+        var arena = ArenaConfigUtil.findOnFileDeep(event.getBlock().getLocation());
         if (arena == null) {
             player.sendMessage(ChatColor.RED + "There is no arena here!");
             return;
@@ -256,21 +253,6 @@ public class SetupWandsUse implements Listener {
         wToDelete.remove(uuid);
     }
 
-    private boolean arenaExistsDeep(String id) { // Non-naive, does not expect arena key to correspond to arena id
-        return plugin.arenas.getConfig().getConfigurationSection("arenas")
-            .getValues(false).values().stream().anyMatch((a) -> ((ArenaConfig) a).id() == id);
-    }
-
-    private @Nullable ArenaConfig findArena(Location... loc) {
-        var configSection = plugin.arenas.getConfig().getConfigurationSection("arenas");
-        for (var arenaEntry : configSection.getValues(false).entrySet()) {
-            var arenaConfig = (ArenaConfig) arenaEntry.getValue();
-            for (Location l : loc)
-                if (arenaConfig.contains(l)) return arenaConfig;
-        }
-        return null;
-    }
-
     private class RangeBuilder {
         public final @Nonnull World world;
         public @Nullable BlockVector a, b;
@@ -287,12 +269,12 @@ public class SetupWandsUse implements Listener {
             return new BlockRange(world, a, b);
         }
 
-        public Location aLoc() {
-            return a.toLocation(world);
+        public @Nullable Location aLoc() {
+            return a == null ? null : a.toLocation(world);
         }
 
-        public Location bLoc() {
-            return b.toLocation(world);
+        public @Nullable Location bLoc() {
+            return b == null ? null : b.toLocation(world);
         }
     }
     private record WallIdentifier(ArenaConfig arena, BlockRange wall) {}

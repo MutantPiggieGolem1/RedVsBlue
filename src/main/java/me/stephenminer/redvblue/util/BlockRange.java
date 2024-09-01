@@ -8,6 +8,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.util.BlockVector;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
@@ -67,5 +68,9 @@ public record BlockRange(World world, BlockVector p1, BlockVector p2) implements
             BlockVector.deserialize((Map<String,Object>) dat.get("p1")),
             BlockVector.deserialize((Map<String,Object>) dat.get("p2"))
         );
+    }
+
+    static {
+        ConfigurationSerialization.registerClass(BlockRange.class);
     }
 }

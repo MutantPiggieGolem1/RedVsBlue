@@ -53,9 +53,7 @@ public class ChestSetupEvents implements Listener {
         Player player = event.getPlayer();
         if (!player.hasPermission("rvb.lootchests.remove")) return;
         String regionId = regionIn(event.getBlock());
-        for (Arena arena : Arena.arenas){
-            if (arena.getId().equals(regionId)) return;
-        }
+        if (Arena.arenaOf(regionId).isPresent()) return;
         boolean removed = removeFromArena(regionId, event.getBlock().getLocation());
         if (removed){
             player.sendMessage(ChatColor.GREEN + "Removed lootchest from " + regionId);

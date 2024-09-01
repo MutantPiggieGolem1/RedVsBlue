@@ -17,6 +17,7 @@ import me.stephenminer.redvblue.arena.chests.ChestSetupEvents;
 import me.stephenminer.redvblue.commands.*;
 import me.stephenminer.redvblue.events.*;
 import me.stephenminer.redvblue.events.items.*;
+import me.stephenminer.redvblue.util.ConfigFile;
 
 public final class RedBlue extends JavaPlugin {
     public ConfigFile arenas;
@@ -24,6 +25,7 @@ public final class RedBlue extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        this.saveDefaultConfig();
         this.arenas = new ConfigFile(this, "arenas");
         this.tables = new ConfigFile(this, "loot-tables");
         registerCommands();
@@ -44,17 +46,17 @@ public final class RedBlue extends JavaPlugin {
     private void registerEvents() {
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new PlayerHandling(this), this);
-        pm.registerEvents(new SetupWandsUse(this), this);
+        pm.registerEvents(new SetupWandsUse(), this);
         pm.registerEvents(new LongRifleUse(), this);
         pm.registerEvents(new ThrowingJuiceUse(), this);
         pm.registerEvents(new WindScrollUse(), this);
         pm.registerEvents(new ChestSetupEvents(), this);
-        pm.registerEvents(new ArenaGuiEvents(), this);
+        pm.registerEvents(new ArenaSelector.EventListener(), this);
     }
 
     private void registerCommands() {
         register("rvb", new CommandTreeHandler(Map.of(
-            "join", new JoinArena(this),
+            "join", new JoinArena(),
             "leave", new LeaveArena(),
             "forcestart", new ForceStart(),
             "forceend", new ForceEnd()

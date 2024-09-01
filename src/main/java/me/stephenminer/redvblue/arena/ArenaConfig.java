@@ -4,17 +4,22 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.util.BlockVector;
 
-import me.stephenminer.redvblue.ConfigFile;
+import me.stephenminer.redvblue.util.ArenaConfigUtil;
 import me.stephenminer.redvblue.util.BlockRange;
 
+/**
+ * A representation of an Arena on file (in the config)
+ */
 public class ArenaConfig implements ConfigurationSerializable {
     private @Nonnull String id;
 
@@ -24,11 +29,10 @@ public class ArenaConfig implements ConfigurationSerializable {
     private @Nullable Map<String, BlockVector> spawns;
     private int wallFallTime;
 
-    public static ArenaConfig builder(String id, BlockRange bounds, ConfigFile toUpdate) {
+    public static ArenaConfig builder(String id, BlockRange bounds) {
         if (id == null || bounds == null) return null;
         var arena = new ArenaConfig(id, bounds, 0);
-        toUpdate.getConfig().set("arenas."+id, arena);
-        toUpdate.saveConfig();
+        ArenaConfigUtil.saveToFile(id, arena);
         return arena;
     }
 
@@ -54,16 +58,6 @@ public class ArenaConfig implements ConfigurationSerializable {
         return bounds.contains(l);
     }
 
-    public boolean createWall(Material mat, BlockRange range) {
-        for (var wallRange : walls.keySet()) {
-            if (range.toBoundingBox().overlaps(wallRange.toBoundingBox()))
-                return false;
-        }
-        walls.put(range, mat);
-        range.fill(mat);
-        return true;
-    }
-
     public Optional<BlockRange> findWall(Location l) {
         if (!l.getWorld().equals(bounds.world())) return Optional.empty();
         return findWall(new BlockVector(l.toVector()));
@@ -73,15 +67,32 @@ public class ArenaConfig implements ConfigurationSerializable {
         return walls.keySet().stream().filter((r) -> r.contains(loc)).findFirst();
     }
 
+    public boolean createWall(Material mat, BlockRange range) {
+        for (var wallRange : walls.keySet()) {
+            if (range.toBoundingBox().overlaps(wallRange.toBoundingBox()))
+                return false;
+        }
+        walls.put(range, mat);
+        range.fill(mat);
+        ArenaConfigUtil.saveToFile(id, this);
+        return true;
+    }
+
     public boolean destroyWall(BlockRange range) {
         if (!walls.containsKey(range)) return false;
         walls.remove(range);
         range.fill(Material.AIR);
+        ArenaConfigUtil.saveToFile(id, this);
         return true;
     }
 
     public String id() {
         return id;
+    }
+
+    public void setWallFallTime(@Nonnegative int newTime) { // TODO implement
+        wallFallTime = newTime;
+        ArenaConfigUtil.saveToFile(id, this);
     }
 
     @Override
@@ -144,9 +155,13 @@ public class ArenaConfig implements ConfigurationSerializable {
         assert dat.containsKey("wallfalltime");
         wallFallTime = (Integer) dat.get("wallfalltime");
     }
+
+    static {
+        ConfigurationSerialization.registerClass(ArenaConfig.class);
+    }
 }
 
-/*
+/* TODO implement
 public Set<NewLootChest> loadLootChests(){
     String path = "arenas." + id + ".loot-chests";
     Set<NewLootChest> chests = new HashSet<>();

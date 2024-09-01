@@ -1,6 +1,8 @@
 package me.stephenminer.redvblue.commands;
 
 import me.stephenminer.redvblue.RedBlue;
+import me.stephenminer.redvblue.util.ArenaConfigUtil;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -27,7 +29,7 @@ public class ArenaCmd implements CommandExecutor, TabCompleter {
             sender.sendMessage(ChatColor.RED + "You need to input at least an arena-id and subcommand to use this command!");
             return false;
         }
-        if (!validId(args[0])){
+        if (!ArenaConfigUtil.existsOnFileShallow(args[0])){
             sender.sendMessage(ChatColor.RED + args[0] + " is not a real arena!");
             return false;
         }
@@ -80,10 +82,6 @@ public class ArenaCmd implements CommandExecutor, TabCompleter {
             }
         }else  sender.sendMessage(ChatColor.RED + "You need to be a player to use this command!");
         return false;
-    }
-
-    private boolean validId(String arenaId){
-        return plugin.arenas.getConfig().contains("arenas." + arenaId);
     }
 
     private void setTeamSpawn(String id, byte team, Location loc){

@@ -21,7 +21,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.arena.Arena;
 
-public class PlayerHandling implements Listener {
+public class PlayerHandling implements Listener { // TODO replace with worldguard
     private final RedBlue plugin;
 
     public PlayerHandling(RedBlue plugin) {

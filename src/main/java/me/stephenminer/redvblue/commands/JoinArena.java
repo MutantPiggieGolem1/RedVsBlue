@@ -9,16 +9,11 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.arena.Arena;
-import me.stephenminer.redvblue.arena.ArenaConfig;
 import me.stephenminer.redvblue.commands.CommandTreeHandler.HandledCommand;
+import me.stephenminer.redvblue.util.ArenaConfigUtil;
 
 public class JoinArena implements HandledCommand {
-    private final RedBlue plugin;
-    public JoinArena(RedBlue plugin){
-        this.plugin = plugin;
-    }
 
     @Override
     public boolean playerOnly() {
@@ -63,19 +58,17 @@ public class JoinArena implements HandledCommand {
 
     @Override
     public List<String> getOptions(int argPos) {
-        if (argPos == 0) return List.copyOf(plugin.arenas.getConfig()
-            .getConfigurationSection("arenas").getKeys(false));
+        if (argPos == 0) return List.copyOf(ArenaConfigUtil.idsOnFileShallow());
         if (argPos == 1) return Bukkit.getOnlinePlayers()
             .stream().map((p) -> p.getName()).toList();
         return null;
     }
 
     private @Nullable Arena findOrCreateArena(String id) {
-        for (Arena arena : Arena.arenas) {
-            if (arena.getId().equals(id)) return arena;
-        }
-        var arenaConfig = (ArenaConfig) plugin.arenas.getConfig().get("arenas." + id);
-        if (arenaConfig == null) return null;
-        return arenaConfig.build();
+        return Arena.arenaOf(id).orElseGet(() -> {
+            var arenaConfig = ArenaConfigUtil.findOnFileShallow(id);
+            if (arenaConfig == null) return null;
+            return arenaConfig.build();
+        });
     }
 }

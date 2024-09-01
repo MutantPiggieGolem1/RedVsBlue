@@ -38,7 +38,7 @@ public class ForceEnd implements HandledCommand {
             }
         } else {
             String id = args[0].toLowerCase();
-            a = Arena.arenas.stream().filter((ar) -> ar.getId() == id).findFirst().orElseThrow();
+            a = Arena.arenaOf(id).orElseThrow();
         }
         if (!a.isStarted()) {
             sender.sendMessage(ChatColor.RED + "You cannot end an arena that hasn't started!");

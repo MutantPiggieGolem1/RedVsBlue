@@ -35,13 +35,16 @@ import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.arena.chests.NewLootChest;
 import me.stephenminer.redvblue.util.BlockRange;
 
-public class Arena {
+public class Arena { // TODO generalize past two teams
     public static Set<Arena> arenas = new HashSet<>();
     public static Optional<Arena> arenaOf(Player p) {
         return arenas.stream().filter((a) -> a.players.contains(p.getUniqueId())).findFirst();
     }
     public static Optional<Arena> arenaOf(Location l) {
         return arenas.stream().filter((a) -> a.hasLocation(l)).findFirst();
+    }
+    public static Optional<Arena> arenaOf(String id) {
+        return arenas.stream().filter((a) -> a.getId().equalsIgnoreCase(id)).findFirst();
     }
 
     private final RedBlue plugin;
@@ -358,10 +361,6 @@ public class Arena {
     }
 
     public void start() {
-        start(false);
-    }
-
-    public void start(boolean setTeam) {
         started = true;
         walls.forEach(Wall::buildWall);
         for (NewLootChest lootChest : chests) {
@@ -372,57 +371,24 @@ public class Arena {
         Team blue = board.getTeam("blue");
         List<UUID> copy = new ArrayList<>(players);
 
-        if (!setTeam) {
-            while (!copy.isEmpty()) {
-                int index = ThreadLocalRandom.current().nextInt(copy.size());
-                UUID uuid = copy.get(index);
-                Player p = Bukkit.getPlayer(uuid);
-                p.setScoreboard(board);
-                p.setHealth(20);
-                p.setFoodLevel(20);
-                Team team = findOpenTeam();
-                int t = team.equals(red) ? 0 : 1;
-                if (team.equals(red))
-                    p.teleport(spawnLocations.get("red"));
-                else if (team.equals(blue))
-                    p.teleport(spawnLocations.get("blue"));
-                team.addPlayer(p);
-                CustomItems.outfitPlayer(p, t);
-                copy.remove(index);
-            }
-        } else {
-            String lowellCheck = "[Lowell]";
-            String otherCheck = "[place-holder]";
-            boolean rand = ThreadLocalRandom.current().nextBoolean();
-            ;
-            if (rand) {
-                assignTeam(red, lowellCheck, true);
-                assignTeam(blue, otherCheck, false);
-            } else {
-                assignTeam(red, otherCheck, true);
-                assignTeam(blue, lowellCheck, false);
-            }
+        while (!copy.isEmpty()) {
+            int index = ThreadLocalRandom.current().nextInt(copy.size());
+            UUID uuid = copy.get(index);
+            Player p = Bukkit.getPlayer(uuid);
+            p.setScoreboard(board);
+            p.setHealth(20);
+            p.setFoodLevel(20);
+            Team team = findOpenTeam();
+            int t = team.equals(red) ? 0 : 1;
+            if (team.equals(red))
+                p.teleport(spawnLocations.get("red"));
+            else if (team.equals(blue))
+                p.teleport(spawnLocations.get("blue"));
+            team.addPlayer(p);
+            CustomItems.outfitPlayer(p, t);
+            copy.remove(index);
         }
         broadcastTitle(ChatColor.GOLD + "Red vs Blue");
-    }
-
-    private void assignTeam(Team team, String checkFor, boolean red) {
-        for (UUID uuid : players) {
-            Player player = Bukkit.getPlayer(uuid);
-            if (player == null)
-                continue;
-            team.addPlayer(player);
-            int teamId;
-            if (red) {
-                player.teleport(spawnLocations.get("red"));
-                teamId = 0;
-            } else {
-                player.teleport(spawnLocations.get("blue"));
-                teamId = 1;
-            }
-
-            CustomItems.outfitPlayer(player, teamId);
-        }
     }
 
     private void wallTimer() {

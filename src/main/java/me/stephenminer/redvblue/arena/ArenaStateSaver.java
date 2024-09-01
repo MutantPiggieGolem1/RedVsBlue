@@ -35,7 +35,7 @@ public class ArenaStateSaver {
         }.runTaskAsynchronously(plugin);
     }
 
-    public void loadMap(){
+    public void loadMap() {
         loading = true;
         new BukkitRunnable(){
             private int index = 0;
