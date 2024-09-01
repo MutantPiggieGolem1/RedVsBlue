@@ -1,7 +1,8 @@
 package me.stephenminer.redvblue.commands;
 
 import me.stephenminer.redvblue.RedBlue;
-import me.stephenminer.redvblue.chests.NewLootChest;
+import me.stephenminer.redvblue.arena.chests.NewLootChest;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -12,8 +13,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 public class LootChestCmd implements CommandExecutor, TabCompleter {
     private final RedBlue plugin;
@@ -21,8 +22,6 @@ public class LootChestCmd implements CommandExecutor, TabCompleter {
     public LootChestCmd(){
         this.plugin = JavaPlugin.getPlugin(RedBlue.class);
     }
-
-    // /rvbchest CHEST
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){
@@ -60,19 +59,9 @@ public class LootChestCmd implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args){
         int size = args.length;
-        if (size == 1) return materials(args[0]);
-        else return tables(args[args.length-1]);
-    }
-    private List<String> materials(String match){
-        List<String> sMats = new ArrayList<>();
-        for (Material mat : Material.values()){
-            sMats.add(mat.name());
-        }
-        return plugin.filter(sMats, match);
-    }
-    private List<String> tables(String match){
-        if (!validTable("")) return null;
-        Set<String> tables = plugin.tables.getConfig().getConfigurationSection("tables").getKeys(false);
-        return plugin.filter(tables,match);
+        if (size == 1) return Arrays.stream(Material.values()).map(m -> m.name())
+            .filter(n -> n.startsWith(args[0])).toList();
+        else return plugin.tables.getConfig().getConfigurationSection("tables").getKeys(false).stream()
+            .filter(t -> t.startsWith(args[args.length-1])).toList();
     }
 }

@@ -30,15 +30,15 @@ import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 import org.bukkit.util.Vector;
 
-import me.stephenminer.redvblue.BlockRange;
 import me.stephenminer.redvblue.CustomItems;
 import me.stephenminer.redvblue.RedBlue;
-import me.stephenminer.redvblue.chests.NewLootChest;
+import me.stephenminer.redvblue.arena.chests.NewLootChest;
+import me.stephenminer.redvblue.util.BlockRange;
 
 public class Arena {
     public static Set<Arena> arenas = new HashSet<>();
     public static Optional<Arena> arenaOf(Player p) {
-        return arenas.stream().filter((a) -> a.hasPlayer(p)).findFirst();
+        return arenas.stream().filter((a) -> a.players.contains(p.getUniqueId())).findFirst();
     }
     public static Optional<Arena> arenaOf(Location l) {
         return arenas.stream().filter((a) -> a.hasLocation(l)).findFirst();
@@ -60,7 +60,6 @@ public class Arena {
 
     private final Set<Wall> walls;
     private final Set<NewLootChest> chests;
-    public HashMap<Location, DataPair> blockMap;
     
     private String id;
     private String name;
@@ -69,9 +68,8 @@ public class Arena {
     private boolean started;
     private boolean starting;
     private boolean ending;
-    private boolean saved;
 
-    private ArenaSaver saver;
+    private final ArenaStateSaver saver;
     private Scoreboard board;
 
     /**
@@ -96,10 +94,8 @@ public class Arena {
         createBoard();
         offline = new HashMap<>();
         players = new HashSet<>();
-        blockMap = new HashMap<>();
         chests = new HashSet<>();
-        saver = new ArenaSaver(this);
-        saver.saveMap();
+        saver = new ArenaStateSaver(this);
         updateBoard();
     }
 
@@ -108,15 +104,11 @@ public class Arena {
             player.sendMessage(ChatColor.RED + "Game is ending!");
             return;
         }
-        if (!saved) {
-            saver.saveMap();
-            saved = true;
-        }
         if (!started) {
             player.getActivePotionEffects().clear();
             players.add(player.getUniqueId());
             broadcast(ChatColor.GREEN + player.getName() + " has joined the game! (" + players.size() + "/"
-                    + loadMinPlayers() + " to start)");
+                    + plugin.loadMinPlayers() + " to start)");
             player.teleport(lobby);
             player.getInventory().clear();
             player.setGameMode(GameMode.SURVIVAL);
@@ -164,7 +156,7 @@ public class Arena {
         red.removeEntry(player.getName());
         blue.removeEntry(player.getName());
         broadcast(ChatColor.RED + player.getDisplayName() + " has quit the game! (" + players.size() + "/"
-                + loadMinPlayers() + " to start)");
+                + plugin.loadMinPlayers() + " to start)");
         player.setGameMode(GameMode.SURVIVAL);
         player.getInventory().clear();
         player.getActivePotionEffects().clear();
@@ -172,10 +164,7 @@ public class Arena {
         player.setHealth(20);
         player.setFoodLevel(20);
         player.setSaturation(5);
-        if (plugin.rerouteLoc != null)
-            player.teleport(plugin.rerouteLoc);
-        else
-            player.sendMessage(ChatColor.RED + "Tell your admins to set the reroute location!");
+        player.teleport(lobby.getWorld().getSpawnLocation());
         if (!ending) {
             checkDeletion();
             checkEnding();
@@ -193,8 +182,7 @@ public class Arena {
         Team blue = board.getTeam("blue");
         broadcast(ChatColor.RED + player.getDisplayName() + " has disconnected & can rejoin!");
         players.remove(player.getUniqueId());
-        if (plugin.rerouteLoc != null)
-            player.teleport(plugin.rerouteLoc);
+        player.teleport(lobby.getWorld().getSpawnLocation());
         if (red.hasPlayer(player)) {
             offline.put(player.getUniqueId(), red);
             red.removePlayer(player);
@@ -211,7 +199,7 @@ public class Arena {
     }
 
     public void checkStart() {
-        if (players.size() >= loadMinPlayers()) {
+        if (players.size() >= plugin.loadMinPlayers()) {
             starting = true;
             new BukkitRunnable() {
                 final int max = 15 * 20;
@@ -224,8 +212,8 @@ public class Arena {
                         broadcast(ChatColor.GOLD + "" + ((max - count) / 20) + " seconds until game start!");
                     }
 
-                    if (players.size() < loadMinPlayers()) {
-                        broadcast(ChatColor.RED + "Not enough players! (" + players.size() + "/" + loadMinPlayers()
+                    if (players.size() < plugin.loadMinPlayers()) {
+                        broadcast(ChatColor.RED + "Not enough players! (" + players.size() + "/" + plugin.loadMinPlayers()
                                 + ")");
                         broadcast(Sound.ENTITY_CAT_PURREOW, 50, 1);
                         starting = false;
@@ -332,7 +320,6 @@ public class Arena {
                     public void run() {
                         if (!saver.isLoading()) {
                             Arena.arenas.remove(arena);
-                            saved = false;
                             this.cancel();
                         }
                     }
@@ -356,7 +343,6 @@ public class Arena {
         started = false;
         starting = false;
         ending = true;
-        saved = false;
 
         for (UUID uuid : players) {
             Player p = Bukkit.getPlayer(uuid);
@@ -421,7 +407,6 @@ public class Arena {
     }
 
     private void assignTeam(Team team, String checkFor, boolean red) {
-        TeamChecker checker = new TeamChecker(plugin);
         for (UUID uuid : players) {
             Player player = Bukkit.getPlayer(uuid);
             if (player == null)
@@ -587,15 +572,14 @@ public class Arena {
         if (!players.contains(player.getUniqueId()))
             return false;
         for (Wall wall : walls) {
-            if (wall != null && !wall.canEdit(player, block))
-                return false;
+            if (wall.contains(lobby)) return false;
         }
         Vector corner1 = block.getLocation().toVector();
         Vector corner2 = corner1.clone().add(new Vector(1, 1, 1));
         if (!arenaBounds.toBoundingBox().overlaps(corner1, corner2)) {
             if (!player.hasPermission("rvb.edit.live")) {
                 player.sendMessage(
-                        ChatColor.RED + "You can not break blocks outside of arenas while you are apart of one!",
+                        ChatColor.RED + "You can not break blocks outside of arenas while you are a part of one!",
                         "Leave the game (/rvbLeave) if you want to leave");
                 return false;
             }
@@ -660,9 +644,6 @@ public class Arena {
         return alive;
     }
 
-    public int loadMinPlayers() {
-        return plugin.settings.getConfig().getInt("settings.min-players");
-    }
 
     public int fallTime() {
         return fallTime;
@@ -713,10 +694,6 @@ public class Arena {
         return started;
     }
 
-    public boolean hasPlayer(Player player) {
-        return players.contains(player.getUniqueId());
-    }
-
     public Set<Wall> getWalls() {
         return walls;
     }
@@ -744,16 +721,6 @@ public class Arena {
      */
     public int size() {
         return players.size();
-    }
-
-    public void save() {
-        String base = "arenas." + id;
-        plugin.arenas.getConfig().set(base + ".name", name);
-        plugin.arenas.getConfig().set(base + ".bounds", arenaBounds.toString());
-        plugin.arenas.getConfig().set(base + ".red-spawn", plugin.fromLoc(spawnLocations.get("red")));
-        plugin.arenas.getConfig().set(base + ".blue-spawn", plugin.fromLoc(spawnLocations.get("blue")));
-        plugin.arenas.getConfig().set(base + ".lobby", plugin.fromLoc(lobby));
-        plugin.arenas.saveConfig();
     }
 
     /*

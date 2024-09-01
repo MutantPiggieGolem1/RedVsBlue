@@ -1,4 +1,4 @@
-package me.stephenminer.redvblue.chests;
+package me.stephenminer.redvblue.arena.chests;
 
 import org.bukkit.inventory.ItemStack;
 

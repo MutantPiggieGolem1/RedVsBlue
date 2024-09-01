@@ -1,4 +1,4 @@
-package me.stephenminer.redvblue.chests;
+package me.stephenminer.redvblue.arena.chests;
 
 import me.stephenminer.redvblue.RedBlue;
 import org.bukkit.ChatColor;

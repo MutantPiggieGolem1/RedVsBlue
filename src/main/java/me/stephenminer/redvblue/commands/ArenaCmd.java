@@ -75,7 +75,7 @@ public class ArenaCmd implements CommandExecutor, TabCompleter {
                         mat = Material.GLASS;
                     }
                     player.sendMessage(ChatColor.YELLOW + "This command is undergoing repairs!");
-                   // setWallType(id, mat);
+                    // setWallType(id, mat);
                 }
             }
         }else  sender.sendMessage(ChatColor.RED + "You need to be a player to use this command!");
@@ -128,7 +128,7 @@ public class ArenaCmd implements CommandExecutor, TabCompleter {
 
     private List<String> arenaIds(String match){
         Set<String> entries = plugin.arenas.getConfig().getConfigurationSection("arenas").getKeys(false);
-        return plugin.filter(entries, match);
+        return entries.stream().filter(n -> n.startsWith(match)).toList();
     }
     private List<String> subCmds(String match){
         List<String> subs = new ArrayList<>();
@@ -138,7 +138,7 @@ public class ArenaCmd implements CommandExecutor, TabCompleter {
         subs.add("removeWall");
         subs.add("setWallType");
         subs.add("delete");
-        return plugin.filter(subs, match);
+        return subs.stream().filter(n -> n.startsWith(match)).toList();
     }
     private List<String> materials(String match){
         List<String> mats = new ArrayList<>();
@@ -146,6 +146,6 @@ public class ArenaCmd implements CommandExecutor, TabCompleter {
         for (Material mat : values){
             mats.add(mat.name());
         }
-        return plugin.filter(mats, match);
+        return mats.stream().filter(n -> n.startsWith(match)).toList();
     }
 }

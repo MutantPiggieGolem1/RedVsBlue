@@ -1,8 +1,9 @@
 package me.stephenminer.redvblue.commands;
 
 import me.stephenminer.redvblue.RedBlue;
-import me.stephenminer.redvblue.chests.LootTableEditor;
-import me.stephenminer.redvblue.chests.NewLootTable;
+import me.stephenminer.redvblue.arena.chests.LootTableEditor;
+import me.stephenminer.redvblue.arena.chests.NewLootTable;
+
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -157,16 +158,10 @@ public class LootTableCmd implements CommandExecutor, TabCompleter {
 
 
     private List<String> subCmds(String match){
-        List<String> subs = new ArrayList<>(5);
-        subs.add("create");
-        subs.add("delete");
-        subs.add("edit");
-        subs.add("max-rolls");
-        subs.add("min-entries");
-        return plugin.filter(subs, match);
+        return List.of("create","delete","edit","max-rolls","min-entries").stream().filter(n -> n.startsWith(match)).toList();
     }
     private List<String> arenaIds(String match){
-        return plugin.filter(existingTables(),match);
+        return existingTables().stream().filter(n -> n.startsWith(match)).toList();
     }
     private List<String> integer(){
         List<String> out = new ArrayList<>();

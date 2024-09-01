@@ -1,6 +1,8 @@
 package me.stephenminer.redvblue;
 
 import me.stephenminer.redvblue.arena.Arena;
+import me.stephenminer.redvblue.events.ArenaGuiEvents;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -98,6 +100,7 @@ public class ArenaGui {
     }
     public void display(Player player){
         player.openInventory(inv);
+        ArenaGuiEvents.IN_GUI.put(player.getUniqueId(), this);
         update();
     }
 

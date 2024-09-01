@@ -19,6 +19,8 @@ import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 
+import me.stephenminer.redvblue.util.MetadataCallback;
+
 public enum CustomItems {
     ARENAWAND(Material.WOODEN_SHOVEL, ChatColor.GOLD + "Arena Wand", List.of(
         ChatColor.ITALIC + "Sets corners for the arena",

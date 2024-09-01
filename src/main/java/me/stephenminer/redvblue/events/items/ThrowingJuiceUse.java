@@ -1,13 +1,9 @@
 package me.stephenminer.redvblue.events.items;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.annotation.Nullable;
-
-import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -25,9 +21,10 @@ import net.md_5.bungee.api.chat.TextComponent;
 
 public class ThrowingJuiceUse implements Listener {
     private final Map<UUID, Long> cooldowns = new HashMap<>();
+    private final double SPLASHRADIUS = 1.5;
 
     @EventHandler
-    public void throwJuice(PlayerInteractEvent event){
+    public void throwJuice(PlayerInteractEvent event) {
         if (!event.hasItem()) return;
         ItemStack item = event.getItem();
         Player player = event.getPlayer();
@@ -51,33 +48,25 @@ public class ThrowingJuiceUse implements Listener {
             }
         }
         var oa = Arena.arenaOf(player);
-        if (onHit(player, oa.orElse(null), res.getHitPosition().toLocation(world)))
-            item.setAmount(item.getAmount() - 1);
+        for (Entity e : world.getNearbyEntities(
+            res.getHitPosition().toLocation(world),
+            SPLASHRADIUS, SPLASHRADIUS, SPLASHRADIUS,
+            e->e instanceof Player
+        )) {
+            Player p = (Player) e;
+            var oa2 = Arena.arenaOf(p);
+            if (oa.isPresent() != oa2.isPresent()) return; // In-arena can't affect out-arena, and vice versa
+            if (oa.isPresent() && oa.orElseThrow().equals(oa2.orElseThrow()) && teamsMatchNaive(player, p)) return;
+            p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,1,0));
+        }
         
+        item.setAmount(item.getAmount() - 1);
         cooldowns.put(player.getUniqueId(), now + 1000 * 5);
     }
 
-    private boolean onHit(Player shooter, @Nullable Arena arena, Location hitLoc){
-        double radius = 1.5;
-        boolean anyHit = false;
-        Collection<Entity> near = hitLoc.getWorld().getNearbyEntities(hitLoc,radius,radius,radius, e->e instanceof Player);
-        for (Entity e : near){
-            Player player = (Player) e;
-            if (arena == null || teamsMatch(arena,shooter,player)){
-                anyHit = true;
-                player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,1,0));
-            }
-        }
-        return anyHit;
+    private boolean teamsMatchNaive(Player shooter, Player target) { // Does not check if they're in the same arena.
+        var sb = shooter.getScoreboard();
+        assert sb == target.getScoreboard();
+        return sb.getEntryTeam(shooter.getName()) == sb.getEntryTeam(target.getName());
     }
-
-    private boolean teamsMatch(Arena arena, Player shooter, Player target){
-        if (arena != null && arena.hasPlayer(shooter) && arena.hasPlayer(target)){
-            var sb = shooter.getScoreboard();
-            assert sb == target.getScoreboard();
-            return sb.getEntryTeam(shooter.getName()) == sb.getEntryTeam(target.getName());
-        }
-        return false;
-    }
-
 }

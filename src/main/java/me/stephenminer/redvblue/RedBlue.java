@@ -1,41 +1,31 @@
 package me.stephenminer.redvblue;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.Map;
 
 import javax.annotation.Nonnull;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import me.stephenminer.redvblue.arena.Arena;
-import me.stephenminer.redvblue.chests.ChestSetupEvents;
+import me.stephenminer.redvblue.arena.chests.ChestSetupEvents;
 import me.stephenminer.redvblue.commands.*;
-import me.stephenminer.redvblue.events.ArenaGuiEvents;
-import me.stephenminer.redvblue.events.ArenaSetup;
-import me.stephenminer.redvblue.events.PlayerHandling;
-import me.stephenminer.redvblue.events.items.LongRifleUse;
-import me.stephenminer.redvblue.events.items.ThrowingJuiceUse;
-import me.stephenminer.redvblue.events.items.WindScrollUse;
+import me.stephenminer.redvblue.events.*;
+import me.stephenminer.redvblue.events.items.*;
 
 public final class RedBlue extends JavaPlugin {
     public ConfigFile arenas;
-    public ConfigFile settings;
     public ConfigFile tables;
-    public Location rerouteLoc;
 
     @Override
     public void onEnable() {
         this.arenas = new ConfigFile(this, "arenas");
-        this.settings = new ConfigFile(this, "settings");
         this.tables = new ConfigFile(this, "loot-tables");
-        if (this.settings.getConfig().contains("settings.reroute-loc"))
-            rerouteLoc = fromString(this.settings.getConfig().getString("settings.reroute-loc"));
         registerCommands();
         registerEvents();
     }
@@ -46,15 +36,15 @@ public final class RedBlue extends JavaPlugin {
             arena.reset();
             arena.forceEnd();
         }
-        this.settings.saveConfig();
+        this.saveConfig();
         this.arenas.saveConfig();
+        this.tables.saveConfig();
     }
 
     private void registerEvents() {
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new PlayerHandling(this), this);
-        // pm.registerEvents(new GuiEvents(this), this);
-        pm.registerEvents(new ArenaSetup(this), this);
+        pm.registerEvents(new SetupWandsUse(this), this);
         pm.registerEvents(new LongRifleUse(), this);
         pm.registerEvents(new ThrowingJuiceUse(), this);
         pm.registerEvents(new WindScrollUse(), this);
@@ -63,45 +53,42 @@ public final class RedBlue extends JavaPlugin {
     }
 
     private void registerCommands() {
-        getCommand("setRerouteLoc").setExecutor(new RerouteLoc(this));
-        getCommand("leaveRvB").setExecutor(new LeaveArena());
-        getCommand("reloadRvB").setExecutor(new Reload(this));
-        getCommand("setMinPlayers").setExecutor(new SetMinPlayers(this));
-        getCommand("setWallTime").setExecutor(new SetWallTime(this));
-        getCommand("forceRvb").setExecutor(new ForceRvB());
-        getCommand("endRvb").setExecutor(new ForceEnd());
-        getCommand("rvbRegen").setExecutor(new MapRegenCmd());
+        register("rvb", new CommandTreeHandler(Map.of(
+            "join", new JoinArena(this),
+            "leave", new LeaveArena(),
+            "forcestart", new ForceStart(),
+            "forceend", new ForceEnd()
+        )));
+        register("rvbconfig", new CommandTreeHandler(Map.of(
+            "reload", new Reload(),
+            "setminplayers", new MinPlayers(this)
+        )));
+        register("rvbgive", new GiveCustom());
 
-        ArenaCmd arenaCmd = new ArenaCmd(this);
-        getCommand("arena").setExecutor(arenaCmd);
-        getCommand("arena").setTabCompleter(arenaCmd);
-
-        JoinArena joinArena = new JoinArena(this);
-        getCommand("joinRvB").setExecutor(joinArena);
-        getCommand("joinRvB").setTabCompleter(joinArena);
-
-        LootChestCmd lootChestCmd = new LootChestCmd();
-        getCommand("rvbchest").setExecutor(lootChestCmd);
-        getCommand("rvbchest").setTabCompleter(lootChestCmd);
-
-        LootTableCmd lootTableCmd = new LootTableCmd();
-        getCommand("rvbloot").setExecutor(lootTableCmd);
-        getCommand("rvbloot").setTabCompleter(lootTableCmd);
-
-        GiveCustom give = new GiveCustom(this);
-        getCommand("rvbgive").setExecutor(give);
-        getCommand("rvbgive").setTabCompleter(give);
+        // WIP - not yet updated to new command framework
+        register("arena", new ArenaCmd(this));
+        register("chest", new LootChestCmd());
+        register("loot", new LootTableCmd());
     }
 
+    private void register(String name, CommandExecutor executor) {
+        var cmd = getCommand(name);
+        cmd.setExecutor(executor);
+        if (executor instanceof TabCompleter t) cmd.setTabCompleter(t);
+    }
+
+    @Deprecated
     public String fromBLoc(Location loc) {
         return loc.getWorld().getName() + "," + loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ();
     }
 
+    @Deprecated
     public String fromLoc(Location loc) {
         return loc.getWorld().getName() + "," + loc.getX() + "," + loc.getY() + "," + loc.getZ() + ',' + loc.getYaw()
                 + "," + loc.getPitch();
     }
 
+    @Deprecated
     public Location fromString(@Nonnull String str) {
         String[] content = str.split(",");
         String wName = content[0];
@@ -123,18 +110,11 @@ public final class RedBlue extends JavaPlugin {
         return null;
     }
 
-    public List<String> filter(Collection<String> base, String match) {
-        List<String> filtered = new ArrayList<>();
-        match = match.toLowerCase();
-        for (String entry : base) {
-            String temp = ChatColor.stripColor(entry).toLowerCase();
-            if (temp.contains(match))
-                filtered.add(entry);
-        }
-        return filtered;
+    public int loadRate() {
+        return Math.max(7000, this.getConfig().getInt("settings.map-regen-rate"));
     }
 
-    public int loadRate() {
-        return Math.max(7000, this.settings.getConfig().getInt("settings.map-regen-rate"));
+    public int loadMinPlayers() {
+        return this.getConfig().getInt("settings.min-players");
     }
 }

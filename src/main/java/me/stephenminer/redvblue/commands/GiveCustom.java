@@ -6,20 +6,14 @@ import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import me.stephenminer.redvblue.CustomItems;
-import me.stephenminer.redvblue.RedBlue;
 
-public class GiveCustom implements CommandExecutor, TabCompleter {
-    private final RedBlue plugin;
-    public GiveCustom(RedBlue plugin){
-        this.plugin = plugin;
-    }
+public class GiveCustom implements TabExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){
@@ -73,11 +67,13 @@ public class GiveCustom implements CommandExecutor, TabCompleter {
         switch (args.length) {
             case 1:
                 var start = args[0].toLowerCase();
-                return Arrays.stream(CustomItems.values()).map((item) -> item.name()).filter((name) -> name.toLowerCase().startsWith(start)).toList();
+                return Arrays.stream(CustomItems.values()).map((item) -> item.name())
+                    .filter((name) -> name.toLowerCase().startsWith(start)).toList();
             case 2:
                 return List.of("[integer]");
             case 3:
-                return plugin.filter(Bukkit.getOnlinePlayers().stream().map((player) -> player.getName()).toList(), args[2]);
+                return Bukkit.getOnlinePlayers().stream().map((player) -> player.getName())
+                    .filter((n) -> ChatColor.stripColor(n).toLowerCase().startsWith(args[2].toLowerCase())).toList();
             default:
                 return null;
         }

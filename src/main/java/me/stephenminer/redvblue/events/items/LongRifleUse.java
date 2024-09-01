@@ -8,7 +8,6 @@ import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.World;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -61,14 +60,13 @@ public class LongRifleUse implements Listener {
         arrow.setVelocity(arrow.getVelocity().multiply(3));
         arrow.setKnockbackStrength(3);
         new BukkitRunnable(){
-            World world = arrow.getWorld();
             @Override
             public void run(){
                 if (arrow.isDead() || arrow.isInBlock()) {
                     this.cancel();
                     return;
                 }
-                world.spawnParticle(Particle.DUST,arrow.getLocation(),1,new Particle.DustOptions(Color.AQUA,1));
+                arrow.getWorld().spawnParticle(Particle.DUST,arrow.getLocation(),1,new Particle.DustOptions(Color.AQUA,1));
             }
         }.runTaskTimer(plugin,0,1);
         player.getWorld().playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE,2,1);

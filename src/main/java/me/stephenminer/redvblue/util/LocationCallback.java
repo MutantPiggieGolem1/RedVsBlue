@@ -1,4 +1,4 @@
-package me.stephenminer.redvblue;
+package me.stephenminer.redvblue.util;
 
 @FunctionalInterface
 public interface LocationCallback {

@@ -10,14 +10,14 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import me.stephenminer.redvblue.RedBlue;
 
-public class ArenaSaver {
+public class ArenaStateSaver {
     private final RedBlue plugin;
     private final Arena arena;
     private List<BlockState> states;
 
     private boolean saving, loading;
 
-    public ArenaSaver(Arena arena){
+    public ArenaStateSaver(Arena arena){
         this.plugin = RedBlue.getPlugin(RedBlue.class);
         this.arena = arena;
         states = new ArrayList<>();
@@ -33,9 +33,6 @@ public class ArenaSaver {
                 saving = false;
             }
         }.runTaskAsynchronously(plugin);
-      //  while(saving) continue;
-
-       // Bukkit.broadcastMessage("aaa");
     }
 
     public void loadMap(){
@@ -56,7 +53,7 @@ public class ArenaSaver {
                     return;
                 }
                 index = countTo;
-                countTo = Math.min(countTo+ plugin.loadRate(), states.size()-1);
+                countTo = Math.min(countTo + plugin.loadRate(), states.size()-1);
             }
         }.runTaskTimer(plugin, 1,1);
     }
@@ -67,5 +64,4 @@ public class ArenaSaver {
 
     public boolean isLoading(){ return loading; }
     public boolean isSaving(){ return saving; }
-
 }
