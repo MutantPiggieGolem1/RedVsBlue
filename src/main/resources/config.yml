@@ -1,4 +1,5 @@
 settings:
-  min-players: 2
-  max-players: 28
+  playerlimit:
+    min: 2
+    max: 28
   roll-bound: 1000

@@ -16,7 +16,6 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.arena.Arena;
@@ -24,9 +23,8 @@ import me.stephenminer.redvblue.util.ArenaConfigUtil;
 
 public class ChestSetupEvents implements Listener {
     private final RedBlue plugin;
-
-    public ChestSetupEvents() {
-        this.plugin = JavaPlugin.getPlugin(RedBlue.class);
+    public ChestSetupEvents(RedBlue plugin){
+        this.plugin = plugin;
     }
 
     /*

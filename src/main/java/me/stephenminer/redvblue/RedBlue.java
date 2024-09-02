@@ -4,9 +4,7 @@ import java.util.Map;
 
 import javax.annotation.Nonnull;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.plugin.PluginManager;
@@ -15,6 +13,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import me.stephenminer.redvblue.arena.Arena;
 import me.stephenminer.redvblue.arena.chests.ChestSetupEvents;
 import me.stephenminer.redvblue.commands.*;
+import me.stephenminer.redvblue.commands.impl.*;
 import me.stephenminer.redvblue.events.*;
 import me.stephenminer.redvblue.events.items.*;
 import me.stephenminer.redvblue.util.ArenaConfigUtil;
@@ -49,28 +48,48 @@ public final class RedBlue extends JavaPlugin {
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new PlayerHandling(this), this);
         pm.registerEvents(new SetupWandsUse(), this);
-        pm.registerEvents(new LongRifleUse(), this);
+        pm.registerEvents(new LongRifleUse(this), this);
         pm.registerEvents(new ThrowingJuiceUse(), this);
         pm.registerEvents(new WindScrollUse(), this);
-        pm.registerEvents(new ChestSetupEvents(), this);
+        pm.registerEvents(new ChestSetupEvents(this), this);
         pm.registerEvents(new ArenaSelector.EventListener(), this);
     }
 
+    
+    /**
+     * /rvbconfig arena <id> 
+     *      spawn lobby/red/blue
+     *      wall
+     *          list
+     *          material <#> <mat>
+     *          delete <#>
+     *      delete
+     */
     private void registerCommands() {
         register("rvb", new CommandTreeHandler(Map.of(
-            "join", new JoinArena(),
+            "join", new JoinArena(this),
             "leave", new LeaveArena(),
             "forcestart", new ForceStart(),
             "forceend", new ForceEnd()
         )));
         register("rvbconfig", new CommandTreeHandler(Map.of(
-            "reload", new Reload(),
-            "minplayers", new MinPlayers(this)
+            "reload", new Reload(this),
+            "minplayers", new PlayerLimit(this, true),
+            "maxplayers", new PlayerLimit(this, false),
+            "arena", new ArenaCommandTreeHandler(Map.of(
+                "spawn", new ArenaSetLoc(),
+                // "wall", new ArenaWalls(), TODO implement
+                "delete", new ArenaDelete()
+            )) {
+                @Override
+                public String permission() {
+                    return "rvb.commands.config.arena";
+                }
+            }
         )));
         register("rvbgive", new GiveCustom());
 
-        // WIP - not yet updated to new command framework
-        register("rvbarena", new ArenaCmd(this));
+        // TODO - not yet updated to new command framework
         register("rvbchest", new LootChestCmd());
         register("rvbloot", new LootTableCmd());
     }
@@ -97,7 +116,7 @@ public final class RedBlue extends JavaPlugin {
         String[] content = str.split(",");
         String wName = content[0];
         try {
-            World world = Bukkit.getWorld(wName);
+            var world = this.getServer().getWorld(wName);
             double x = Double.parseDouble(content[1]);
             double y = Double.parseDouble(content[2]);
             double z = Double.parseDouble(content[3]);
@@ -114,11 +133,17 @@ public final class RedBlue extends JavaPlugin {
         return null;
     }
 
+    @Override
+    public void reloadConfig() {
+        arenas.reloadConfig();
+        super.reloadConfig();
+    }
+
     public int loadRate() {
         return Math.max(7000, this.getConfig().getInt("settings.map-regen-rate"));
     }
 
     public int loadMinPlayers() {
-        return this.getConfig().getInt("settings.min-players");
+        return this.getConfig().getInt("settings.playerlimit.min");
     }
 }

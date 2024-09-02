@@ -26,6 +26,14 @@ public class ArenaConfigUtil {
         arenaConfigs = cfgFile.getConfig().getConfigurationSection("arenas");
     }
 
+    private static String deepToShallow(ArenaConfig arena) {
+        for (String key : arenaConfigs.getKeys(false)) {
+            var a = arenaConfigs.getObject(key, ArenaConfig.class);
+            if (a.id().equals(arena.id())) return key;
+        }
+        return null; // should NEVER occur
+    }
+
     public static Set<String> idsOnFileShallow() {
         return arenaConfigs == null ? Set.of() : arenaConfigs.getKeys(false);
     }
@@ -66,8 +74,17 @@ public class ArenaConfigUtil {
         return null;
     }
 
-    public static void saveToFile(String id, ArenaConfig arena) {
+    public static void saveToFileShallow(ArenaConfig arena) {
+        saveToFileShallow(arena.id(), arena);
+    }
+
+    public static void saveToFileShallow(String id, ArenaConfig arena) {
         arenaConfigs.set(id, arena);
+        cfgFile.saveConfig();
+    }
+
+    public static void removeFromFileDeep(ArenaConfig arena) {
+        arenaConfigs.set(deepToShallow(arena), null);
         cfgFile.saveConfig();
     }
 }

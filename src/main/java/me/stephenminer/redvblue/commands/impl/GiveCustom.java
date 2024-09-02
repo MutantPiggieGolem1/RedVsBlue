@@ -1,4 +1,4 @@
-package me.stephenminer.redvblue.commands;
+package me.stephenminer.redvblue.commands.impl;
 
 import java.util.Arrays;
 import java.util.List;

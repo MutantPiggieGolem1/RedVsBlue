@@ -10,25 +10,25 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import me.stephenminer.redvblue.RedBlue;
 
-public class ArenaStateSaver {
+public class ArenaStateSaver { // TODO revise this to do its own internal state checking
     private final RedBlue plugin;
     private final Arena arena;
-    private List<BlockState> states;
+    private final List<BlockState> states;
 
     private boolean saving, loading;
 
-    public ArenaStateSaver(Arena arena){
-        this.plugin = RedBlue.getPlugin(RedBlue.class);
+    public ArenaStateSaver(RedBlue plugin, Arena arena){
+        this.plugin = plugin;
         this.arena = arena;
         states = new ArrayList<>();
         loading = false;
     }
 
-    public void saveMap(){
+    public void saveMap() {
         saving = true;
         new BukkitRunnable(){
             @Override
-            public void run(){
+            public void run() {
                 arena.getBounds().forEach((Location l) -> states.add(l.getBlock().getState()));
                 saving = false;
             }

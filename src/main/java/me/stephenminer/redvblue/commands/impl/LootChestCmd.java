@@ -1,4 +1,4 @@
-package me.stephenminer.redvblue.commands;
+package me.stephenminer.redvblue.commands.impl;
 
 import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.arena.chests.NewLootChest;

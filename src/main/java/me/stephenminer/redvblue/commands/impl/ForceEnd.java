@@ -1,15 +1,15 @@
-package me.stephenminer.redvblue.commands;
+package me.stephenminer.redvblue.commands.impl;
 
-import java.util.List;
+import java.util.Collection;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import me.stephenminer.redvblue.arena.Arena;
-import me.stephenminer.redvblue.commands.CommandTreeHandler.HandledCommand;
+import me.stephenminer.redvblue.commands.HandledCommand;
 
-public class ForceStart implements HandledCommand {
+public class ForceEnd implements HandledCommand { // TODO combine with ForceStart
 
     @Override
     public boolean playerOnly() {
@@ -18,7 +18,7 @@ public class ForceStart implements HandledCommand {
 
     @Override
     public String permission() {
-        return "rvb.commands.forcestart";
+        return "rvb.commands.forceend";
     }
 
     @Override
@@ -40,16 +40,16 @@ public class ForceStart implements HandledCommand {
             String id = args[0].toLowerCase();
             a = Arena.arenaOf(id).get();
         }
-        if (a.isStarted()) {
-            sender.sendMessage(ChatColor.RED + "You cannot start an arena that's already started!");
+        if (!a.isStarted()) {
+            sender.sendMessage(ChatColor.RED + "You cannot end an arena that hasn't started!");
             return false;
         }
-        a.start();
+        a.end();
         return true;
     }
 
     @Override
-    public List<String> getOptions(int argPos) {
+    public Collection<String> getOptions(int argPos) {
         if (argPos == 0) return Arena.arenas.stream().map((a) -> a.getId()).toList();
         return null;
     }

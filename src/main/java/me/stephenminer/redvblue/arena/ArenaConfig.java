@@ -1,8 +1,10 @@
 package me.stephenminer.redvblue.arena;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
@@ -26,13 +28,13 @@ public class ArenaConfig implements ConfigurationSerializable {
     private @Nonnull  BlockRange bounds;
     private @Nullable Location lobby;
     private final @Nonnull Map<BlockRange, Material> walls; // Empty if none created
-    private @Nullable Map<String, BlockVector> spawns;
+    private final @Nonnull Map<String, BlockVector> spawns;
     private int wallFallTime;
 
     public static ArenaConfig builder(String id, BlockRange bounds) {
         if (id == null || bounds == null) return null;
         var arena = new ArenaConfig(id, bounds, 0);
-        ArenaConfigUtil.saveToFile(id, arena);
+        ArenaConfigUtil.saveToFileShallow(id, arena);
         return arena;
     }
 
@@ -41,11 +43,12 @@ public class ArenaConfig implements ConfigurationSerializable {
         this.id = id;
         this.bounds = bounds;
         this.walls = new HashMap<>();
+        this.spawns = new HashMap<>();
         this.wallFallTime = wallFallTime;
     }
 
     public @Nullable Arena build() {
-        if (lobby == null || spawns == null || spawns.size() < 2) return null;
+        if (lobby == null || spawns.size() < 2) return null;
         var world = bounds.world();
         var a = new Arena(id, id, bounds, spawns.get("red").toLocation(world), spawns.get("blue").toLocation(world), lobby);
         for (var wall : walls.entrySet()) a.addWall(new Wall(wall.getValue(), wall.getKey()));
@@ -56,6 +59,14 @@ public class ArenaConfig implements ConfigurationSerializable {
 
     public boolean contains(Location l) {
         return bounds.contains(l);
+    }
+
+    public boolean hasTeam(String team) {
+        return spawns.containsKey(team);
+    }
+
+    public Set<String> getTeams() {
+        return new HashSet<>(spawns.keySet());
     }
 
     public Optional<BlockRange> findWall(Location l) {
@@ -74,7 +85,6 @@ public class ArenaConfig implements ConfigurationSerializable {
         }
         walls.put(range, mat);
         range.fill(mat);
-        ArenaConfigUtil.saveToFile(id, this);
         return true;
     }
 
@@ -82,17 +92,25 @@ public class ArenaConfig implements ConfigurationSerializable {
         if (!walls.containsKey(range)) return false;
         walls.remove(range);
         range.fill(Material.AIR);
-        ArenaConfigUtil.saveToFile(id, this);
         return true;
+    }
+
+    public void setLobby(Location l) {
+        lobby = l;
+    }
+
+    public BlockVector setSpawn(String team, BlockVector l) {
+        var old = spawns.containsKey(team) ? spawns.get(team).clone() : null;
+        spawns.put(team, l);
+        return old;
+    }
+
+    public void setWallFallTime(@Nonnegative int newTime) {
+        wallFallTime = newTime;
     }
 
     public String id() {
         return id;
-    }
-
-    public void setWallFallTime(@Nonnegative int newTime) { // TODO implement
-        wallFallTime = newTime;
-        ArenaConfigUtil.saveToFile(id, this);
     }
 
     @Override
@@ -108,14 +126,12 @@ public class ArenaConfig implements ConfigurationSerializable {
         }
         dat.put("walls", wallsSerialized);
         
-        if (spawns != null) {
-            Map<String, Map<String, Object>> spawnsSerialized = new HashMap<>();
-            for (var e : spawns.entrySet()) {
-                spawnsSerialized.put(e.getKey(), e.getValue().serialize());
-            }
-            dat.put("spawns", spawnsSerialized);
+        Map<String, Map<String, Object>> spawnsSerialized = new HashMap<>();
+        for (var e : spawns.entrySet()) {
+            spawnsSerialized.put(e.getKey(), e.getValue().serialize());
         }
-
+        dat.put("spawns", spawnsSerialized);
+        
         dat.put("wallfalltime", wallFallTime);
         return dat;
     }
@@ -150,6 +166,8 @@ public class ArenaConfig implements ConfigurationSerializable {
                 spawnsDeserialized.put(e.getKey(), BlockVector.deserialize(e.getValue()));
             }
             spawns = spawnsDeserialized;
+        } else {
+            spawns = new HashMap<>();
         }
 
         assert dat.containsKey("wallfalltime");

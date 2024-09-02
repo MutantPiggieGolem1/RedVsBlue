@@ -12,8 +12,6 @@ commands:
   rvbgive:
     permission: "rvb.commands.give"
   
-  rvbarena:
-    permission: "rvb.commands.arena"
   rvbchest:
     permission: "rvb.commands.lootchest"
   rvbloot:

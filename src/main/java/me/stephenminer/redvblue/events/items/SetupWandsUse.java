@@ -191,6 +191,7 @@ public class SetupWandsUse implements Listener {
                 return;
             }
             if (inprog.arena.get().createWall(mat, inprog.toRange())) {
+                ArenaConfigUtil.saveToFileShallow(inprog.arena.get());
                 player.sendMessage(ChatColor.GREEN + "Wall created and added to arena '" + inprog.arena.get().id() + "'!");
             } else {
                 player.sendMessage(ChatColor.RED + "Wall intersects with another in arena '" + inprog.arena.get().id() + "'!");
@@ -231,7 +232,8 @@ public class SetupWandsUse implements Listener {
         String msg = ChatColor.stripColor(event.getMessage()).toLowerCase();
         if (msg.equalsIgnoreCase("confirm")){
             var pair = wToDelete.get(uuid);
-            if (pair.arena().destroyWall(pair.wall())) { 
+            if (pair.arena().destroyWall(pair.wall())) {
+                ArenaConfigUtil.saveToFileShallow(pair.arena);
                 player.sendMessage(ChatColor.GREEN + "Wall deleted and removed from arena '" + pair.arena().id() + "'!");
             } else {
                 player.sendMessage(ChatColor.RED + "Wall did not exist in arena '" + pair.arena().id() + "'!");

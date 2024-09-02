@@ -1,6 +1,6 @@
-package me.stephenminer.redvblue.commands;
+package me.stephenminer.redvblue.commands.impl;
 
-import java.util.List;
+import java.util.Collection;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -8,7 +8,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import me.stephenminer.redvblue.arena.Arena;
-import me.stephenminer.redvblue.commands.CommandTreeHandler.HandledCommand;
+import me.stephenminer.redvblue.commands.HandledCommand;
 
 public class LeaveArena implements HandledCommand {
 
@@ -51,7 +51,7 @@ public class LeaveArena implements HandledCommand {
     }
 
     @Override
-    public List<String> getOptions(int argPos) {
+    public Collection<String> getOptions(int argPos) {
         if (argPos == 0) return Bukkit.getOnlinePlayers()
             .stream().map((p) -> p.getName()).toList();
         return null;

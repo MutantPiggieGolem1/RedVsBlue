@@ -98,7 +98,7 @@ public class Arena { // TODO generalize past two teams
         offline = new HashMap<>();
         players = new HashSet<>();
         chests = new HashSet<>();
-        saver = new ArenaStateSaver(this);
+        saver = new ArenaStateSaver(plugin, this);
         updateBoard();
     }
 

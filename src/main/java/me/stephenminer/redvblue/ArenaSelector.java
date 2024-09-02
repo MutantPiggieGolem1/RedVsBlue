@@ -13,7 +13,6 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import me.stephenminer.redvblue.arena.Arena;
@@ -23,8 +22,8 @@ public class ArenaSelector implements InventoryHolder {
     private final RedBlue plugin;
     private final Inventory inv;
 
-    public ArenaSelector() {
-        this.plugin = JavaPlugin.getPlugin(RedBlue.class);
+    public ArenaSelector(RedBlue plugin) {
+        this.plugin = plugin;
         this.inv = Bukkit.createInventory(null, 18, ChatColor.AQUA + "Arena Selector");
     }
 
@@ -72,10 +71,11 @@ public class ArenaSelector implements InventoryHolder {
     public static class EventListener implements Listener {
         @EventHandler
         public void onClick(InventoryClickEvent event) {
+            ItemStack item = event.getCurrentItem();
+            if (event.getInventory() == null || item == null) return;
             if (!(event.getInventory().getHolder() instanceof ArenaSelector))
                 return;
             event.setCancelled(true);
-            ItemStack item = event.getCurrentItem();
             if (item == null || !item.hasItemMeta() || !item.getItemMeta().hasDisplayName())
                 return;
             String arenaId = ChatColor.stripColor(item.getItemMeta().getDisplayName());

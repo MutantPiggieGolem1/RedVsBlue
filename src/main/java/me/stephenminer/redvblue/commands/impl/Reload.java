@@ -1,16 +1,17 @@
-package me.stephenminer.redvblue.commands;
-
-import java.util.List;
+package me.stephenminer.redvblue.commands.impl;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import me.stephenminer.redvblue.RedBlue;
-import me.stephenminer.redvblue.commands.CommandTreeHandler.HandledCommand;
+import me.stephenminer.redvblue.commands.HandledCommand;
 import me.stephenminer.redvblue.util.ArenaConfigUtil;
 
 public class Reload implements HandledCommand {
+    private final RedBlue plugin;
+    public Reload(RedBlue plugin){
+        this.plugin = plugin;
+    }
 
     @Override
     public boolean playerOnly() {
@@ -24,16 +25,9 @@ public class Reload implements HandledCommand {
 
     @Override
     public boolean execute(CommandSender sender, String[] args) {
-        var plugin = JavaPlugin.getPlugin(RedBlue.class);
         plugin.reloadConfig();
-        plugin.arenas.reloadConfig();
         ArenaConfigUtil.reloadArenaConfigs();
         sender.sendMessage(ChatColor.GREEN + "Reloaded Files");
         return true;
-    }
-
-    @Override
-    public List<String> getOptions(int argPos) {
-        return null;
     }
 }

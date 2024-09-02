@@ -1,6 +1,7 @@
 package me.stephenminer.redvblue.commands;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -10,10 +11,15 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
-public class CommandTreeHandler implements TabExecutor {
-    private final Map<String, HandledCommand> subCommands;
+public class CommandTreeHandler implements TabExecutor, HandledCommand {
+    protected final Map<String, HandledCommand> subCommands;
     public CommandTreeHandler(Map<String, HandledCommand> subCommands) {
         this.subCommands = subCommands;
+    }
+
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        return execute(sender, args);
     }
 
     @Override
@@ -21,6 +27,8 @@ public class CommandTreeHandler implements TabExecutor {
         if (args.length <= 1) return List.copyOf(subCommands.keySet());
         var sub = subCommands.get(args[0]);
         if (sub == null) return null;
+        if (sub instanceof CommandTreeHandler t)
+            return t.onTabComplete(sender, command, args[0], Arrays.copyOfRange(args, 1, args.length));
         if (sender instanceof Player && sub.permission() != null && !sender.hasPermission(sub.permission()))
             return null; // They don't have the permission to run the command
         var inprog = args[args.length - 1].toLowerCase();
@@ -30,7 +38,12 @@ public class CommandTreeHandler implements TabExecutor {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean playerOnly() {
+        return false;
+    }
+
+    @Override
+    public boolean execute(CommandSender sender, String[] args) {
         var sub = args.length == 0 ? subCommands.get("help") : subCommands.get(args[0]);
         if (sub == null) {
             sender.sendMessage(ChatColor.RED + "Invalid arguments!");
@@ -55,10 +68,8 @@ public class CommandTreeHandler implements TabExecutor {
         return sub.execute(sender, subArgs);
     }
 
-    public interface HandledCommand {
-        public boolean playerOnly();
-        public default String permission() {return null;}
-        public boolean execute(CommandSender sender, String[] args);
-        public List<String> getOptions(int argPos);
+    @Override
+    public Collection<String> getOptions(int argPos) {
+        throw new UnsupportedOperationException("CommandTreeHandlers cannot operate with getOptions.");
     }
 }

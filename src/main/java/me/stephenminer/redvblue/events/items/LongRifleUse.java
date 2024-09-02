@@ -16,7 +16,6 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -31,8 +30,8 @@ public class LongRifleUse implements Listener {
     private final Map<UUID, Long> cooldowns = new HashMap<>();
     private final long cooldownDurationMS = 20 * 1000;
 
-    public LongRifleUse() {
-        this.plugin = JavaPlugin.getPlugin(RedBlue.class);
+    public LongRifleUse(RedBlue plugin){
+        this.plugin = plugin;
     }
 
     @EventHandler
