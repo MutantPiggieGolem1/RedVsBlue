@@ -109,9 +109,11 @@ public class Arena {
         
         switch (period) {
             case QUEUEING:
+                players.add(player.getUniqueId());
                 broadcast(ChatColor.GREEN + player.getName() + " has joined the game! "+getPlayerNumStr());
                 player.setGameMode(GameMode.ADVENTURE); // send them to the lobby
                 player.getInventory().clear();
+                player.setScoreboard(board);
                 player.teleport(lobby);
             break;
             case STARTING:
@@ -128,6 +130,8 @@ public class Arena {
                     spectate(player);
                     return;
                 }
+                players.add(player.getUniqueId());
+                player.setScoreboard(board);
                 firstSpawn(player);
                 pt = board.getEntryTeam(player.getName());
                 broadcast(ChatColor.GREEN + player.getName() + " has joined the game on the '"+ pt.getDisplayName() +"' team!");
@@ -137,7 +141,6 @@ public class Arena {
                 player.sendMessage(ChatColor.YELLOW + "The game has already ended!");
             return;
         }
-        players.add(player.getUniqueId());
     }
 
     public void removePlayer(Player player, boolean intentional) {
@@ -178,6 +181,7 @@ public class Arena {
             break;
             case STARTING:
                 if (!player.getScoreboard().equals(board)) {
+                    player.setScoreboard(board);
                     firstSpawn(player);
                     break;
                 }
@@ -234,7 +238,6 @@ public class Arena {
 
     private void firstSpawn(Player player) {
         player.setGameMode(GameMode.SURVIVAL);
-        player.setScoreboard(board);
         Team team = getSmallestTeam();
         team.addEntry(player.getName());
         spawn(player);
