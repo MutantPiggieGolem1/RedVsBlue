@@ -2,6 +2,7 @@ package me.stephenminer.redvblue.util;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -25,6 +26,7 @@ public class ArenaConfigUtil {
     }
 
     public static void reload() {
+        cfgFile.reloadConfig();
         var cfg = cfgFile.getConfig();
         if (!cfg.isConfigurationSection("arenas")) cfg.createSection("arenas");
         arenaConfigs = cfgFile.getConfig().getConfigurationSection("arenas");
@@ -34,6 +36,7 @@ public class ArenaConfigUtil {
         if (arenaConfigs == null) throw new IllegalStateException("arenaConfigs has not been initialized.");
         for (String key : arenaConfigs.getKeys(false)) {
             var a = arenaConfigs.getObject(key, ArenaConfig.class);
+            if (a == null) continue;
             if (a.id().equals(arena.id())) return key;
         }
         return null; // should NEVER occur
@@ -42,6 +45,10 @@ public class ArenaConfigUtil {
     public static Set<String> idsOnFileShallow() {
         if (arenaConfigs == null) throw new IllegalStateException("arenaConfigs has not been initialized.");
         return arenaConfigs.getKeys(false);
+    }
+    
+    public static Set<String> readyIDsOnFileDeep() {
+        return valuesOnFile().stream().filter(ArenaConfig::isBuildable).map(ArenaConfig::id).collect(Collectors.toSet());
     }
 
     private static Set<ArenaConfig> valuesOnFile() {
@@ -65,7 +72,7 @@ public class ArenaConfigUtil {
      * Does not expect arena key to correspond with arena id
      */
     public static boolean existsOnFileDeep(String id) {
-        return valuesOnFile().stream().anyMatch((a) -> a.id() == id);
+        return valuesOnFile().stream().anyMatch((a) -> a.id().equals(id));
     }
 
     public static @Nullable ArenaConfig findOnFileShallow(String id) {
@@ -99,10 +106,5 @@ public class ArenaConfigUtil {
     public static void save() {
         if (arenaConfigs == null) throw new IllegalStateException("arenaConfigs has not been initialized.");
         cfgFile.saveConfig();
-    }
-
-    @Deprecated
-    public static ConfigFile accessorThatShouldBeRemovedButIHaventYet() {
-        return cfgFile;
     }
 }

@@ -41,7 +41,7 @@ public class ArenaSelector implements InventoryHolder {
                     return;
                 } else {
                     inv.clear();
-                    for (String id : ArenaConfigUtil.idsOnFileShallow()) {
+                    for (String id : ArenaConfigUtil.readyIDsOnFileDeep()) {
                         inv.addItem(arenaIcon(id));
                     }
                 }
@@ -60,6 +60,7 @@ public class ArenaSelector implements InventoryHolder {
                     ChatColor.GREEN + "Click to join!" :
                     ChatColor.YELLOW + "Click to spectate!"
         ));
+        meta.setCustomModelData(hashCode());
         item.setItemMeta(meta);
         return item;
     }
@@ -74,13 +75,14 @@ public class ArenaSelector implements InventoryHolder {
         public void onClick(InventoryClickEvent event) {
             ItemStack item = event.getCurrentItem();
             if (event.getInventory() == null || item == null) return;
-            if (!(event.getInventory().getHolder() instanceof ArenaSelector))
-                return;
+            if (!(event.getView().getTitle().equals(ChatColor.AQUA + "Arena Selector")))
+                return; // not ideal but idc
             event.setCancelled(true);
+            if (!event.getClickedInventory().equals(event.getView().getTopInventory())) return; // all buttons are on top silly
             if (item == null || !item.hasItemMeta() || !item.getItemMeta().hasDisplayName())
                 return;
             String arenaId = ChatColor.stripColor(item.getItemMeta().getDisplayName());
-            Bukkit.dispatchCommand(event.getWhoClicked(), "joinrvb " + arenaId);
+            Bukkit.dispatchCommand(event.getWhoClicked(), "rvb join " + arenaId);
         }
     }
 }

@@ -86,7 +86,7 @@ public class SetupWandsUse implements Listener {
         if (msg.isBlank()) {
             player.sendMessage(ChatColor.RED + "Invalid response, try again.");
             return;
-        } else if (msg == "cancel") {
+        } else if (msg.equals("cancel")) {
             player.sendMessage(ChatColor.RED + "Cancelling creation");
         } else {
             String id = msg.trim().replaceAll("[\\s:]+", "_");
@@ -181,6 +181,7 @@ public class SetupWandsUse implements Listener {
         if (!wToCreate.containsKey(uuid)) return;
         WallRangeBuilder inprog = wToCreate.get(uuid);
         if (!inprog.isDone()) return;
+        event.setCancelled(true);
         String msg = ChatColor.stripColor(event.getMessage()).toUpperCase();
         if (msg.equalsIgnoreCase("cancel")){
             player.sendMessage(ChatColor.RED + "Cancelling creation");
@@ -190,11 +191,16 @@ public class SetupWandsUse implements Listener {
                 player.sendMessage(ChatColor.YELLOW + "Invalid Material, try again.");
                 return;
             }
-            if (inprog.arena.get().createWall(mat, inprog.toRange())) {
-                ArenaConfigUtil.saveToFileShallow(inprog.arena.get());
-                player.sendMessage(ChatColor.GREEN + "Wall created and added to arena '" + inprog.arena.get().id() + "'!");
-            } else {
-                player.sendMessage(ChatColor.RED + "Wall intersects with another in arena '" + inprog.arena.get().id() + "'!");
+            try {
+                if (inprog.arena.get().createWall(mat, inprog.toRange())) {
+                    ArenaConfigUtil.saveToFileShallow(inprog.arena.get());
+                    player.sendMessage(ChatColor.GREEN + "Wall created and added to arena '" + inprog.arena.get().id() + "'!");
+                } else {
+                    player.sendMessage(ChatColor.RED + "Wall intersects with another in arena '" + inprog.arena.get().id() + "'!");
+                    return;
+                }
+            } catch (IllegalArgumentException e) {
+                player.sendMessage(ChatColor.RED + "Wall must be inside arena '" + inprog.arena.get().id() + "'!");
                 return;
             }
         }
@@ -282,10 +288,11 @@ public class SetupWandsUse implements Listener {
     }
     private record WallIdentifier(ArenaConfig arena, BlockRange wall) {}
     private class WallRangeBuilder extends RangeBuilder {
-        public Optional<ArenaConfig> arena;
+        public @Nonnull Optional<ArenaConfig> arena;
 
         public WallRangeBuilder(World w) {
             super(w);
+            arena = Optional.empty();
         }
 
         public boolean isDone() {

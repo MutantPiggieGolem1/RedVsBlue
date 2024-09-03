@@ -290,7 +290,7 @@ public class Arena {
         switch (period) {
             case QUEUEING:
                 long now = System.currentTimeMillis();
-                boolean isFull = players.size() < plugin.loadMinPlayers();
+                boolean isFull = players.size() >= plugin.loadMinPlayers();
                 if (startAttempt != null) {
                     if (now >= startAttempt) {
                         if (isFull) {
@@ -305,7 +305,7 @@ public class Arena {
                         }
                     } else {
                         long secondsUntil = (startAttempt - now) / 1000;
-                        if (secondsUntil % 10 == 0) {
+                        if (secondsUntil != 0 && (secondsUntil % 10 == 0 || secondsUntil < 10)) {
                             broadcast(Sound.ENTITY_CAT_AMBIENT, 2, 1);
                             broadcast(ChatColor.GOLD + "" + secondsUntil + " seconds until game start!");
                         }

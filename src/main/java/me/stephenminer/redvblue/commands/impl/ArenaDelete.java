@@ -16,7 +16,7 @@ public class ArenaDelete implements ArenaHandledCommand {
     }
 
     @Override
-    public boolean execute(CommandSender sender, ArenaConfig arena, String[] args) {
+    public boolean execute(CommandSender sender, ArenaConfig arena, String[] args) { // SUBOPTIMAL add confirmation
         ArenaConfigUtil.removeFromFileDeep(arena);
         return true;
     }

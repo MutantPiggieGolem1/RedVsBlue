@@ -8,7 +8,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
-import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.util.BlockVector;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
@@ -41,7 +40,7 @@ public record BlockRange(World world, BlockVector p1, BlockVector p2) implements
     }
 
     public boolean contains(Location other) {
-        return other.getWorld() == world && toBoundingBox().contains(other.toVector());
+        return other.getWorld().equals(world) && toBoundingBox().contains(other.toVector());
     }
 
     @Override
@@ -50,7 +49,7 @@ public record BlockRange(World world, BlockVector p1, BlockVector p2) implements
     }
 
     public static final BlockRange fromLocations(Location loc1, Location loc2) {
-        assert loc1.getWorld() == loc2.getWorld();
+        assert loc1.getWorld().equals(loc2.getWorld());
         return new BlockRange(loc1.getWorld(), new BlockVector(loc1.toVector()), new BlockVector(loc2.toVector()));
     }
 
@@ -72,9 +71,5 @@ public record BlockRange(World world, BlockVector p1, BlockVector p2) implements
             BlockVector.deserialize((Map<String,Object>) dat.get("p1")),
             BlockVector.deserialize((Map<String,Object>) dat.get("p2"))
         );
-    }
-
-    static {
-        ConfigurationSerialization.registerClass(BlockRange.class);
     }
 }

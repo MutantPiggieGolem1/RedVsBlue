@@ -5,7 +5,6 @@ import org.bukkit.command.CommandSender;
 
 import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.commands.HandledCommand;
-import me.stephenminer.redvblue.util.ArenaConfigUtil;
 
 public class Reload implements HandledCommand {
     private final RedBlue plugin;
@@ -26,7 +25,6 @@ public class Reload implements HandledCommand {
     @Override
     public boolean execute(CommandSender sender, String[] args) {
         plugin.reloadConfig();
-        ArenaConfigUtil.reload();
         sender.sendMessage(ChatColor.GREEN + "Reloaded Files");
         return true;
     }

@@ -16,13 +16,13 @@ import me.stephenminer.redvblue.util.ArenaConfigUtil;
 public class ArenaCommandTreeHandler extends CommandTreeHandler {
     @SuppressWarnings("unchecked")
     public ArenaCommandTreeHandler(Map<String, ArenaHandledCommand> subActions) {
-        super(Map.ofEntries((Map.Entry<String,HandledCommand>[]) subActions.entrySet().stream().map((e) -> Map.entry(e.getKey(), (HandledCommand) e.getValue())).toArray()));
+        super(Map.ofEntries((Map.Entry<String,HandledCommand>[]) subActions.entrySet().stream().map((e) -> Map.entry(e.getKey(), (HandledCommand) e.getValue())).toArray((n) -> new Map.Entry[n])));
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 0) return List.copyOf(ArenaConfigUtil.idsOnFileShallow());
-        if (args.length == 1) return List.copyOf(subCommands.keySet());
+        if (args.length <= 1) return List.copyOf(ArenaConfigUtil.idsOnFileShallow());
+        if (args.length == 2) return List.copyOf(subCommands.keySet());
         var oa = ArenaConfigUtil.findOnFileShallow(args[0]);
         if (oa == null) return null;
         var sub = (ArenaHandledCommand) subCommands.get(args[1]);
@@ -32,8 +32,8 @@ public class ArenaCommandTreeHandler extends CommandTreeHandler {
         if (sender instanceof Player && sub.permission() != null && !sender.hasPermission(sub.permission()))
             return null; // They don't have the permission to run the command
         var inprog = args[args.length - 1].toLowerCase();
-        var opts = sub.getOptions(oa, args.length - 2);
-        return opts == null ? null : opts // subtract 2, because the first arg is this command's name
+        var opts = sub.getOptions(oa, args.length - 2); // subtract 2, because the first arg is this command's name
+        return opts == null ? null : opts 
             .stream().filter((o) -> ChatColor.stripColor(o).toLowerCase().startsWith(inprog)).toList();
     }
 
@@ -53,7 +53,7 @@ public class ArenaCommandTreeHandler extends CommandTreeHandler {
             sender.sendMessage(ChatColor.RED + "Arena '" + args[0] + "' does not exist!");
             return false;
         }
-        var sub = (ArenaHandledCommand) subCommands.get(args[0]);
+        var sub = (ArenaHandledCommand) subCommands.get(args[1]);
         assert sub != null; // getOptions validation should prevent this
         if (sender instanceof Player && sub.permission() != null && !sender.hasPermission(sub.permission())) {
             sender.sendMessage(ChatColor.RED + "You don't have permission to do that!");

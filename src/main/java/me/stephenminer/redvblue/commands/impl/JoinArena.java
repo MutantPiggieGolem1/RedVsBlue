@@ -68,7 +68,7 @@ public class JoinArena implements HandledCommand {
 
     @Override
     public Collection<String> getOptions(int argPos) {
-        if (argPos == 0) return ArenaConfigUtil.idsOnFileShallow();
+        if (argPos == 0) return ArenaConfigUtil.readyIDsOnFileDeep();
         if (argPos == 1) return Bukkit.getOnlinePlayers()
             .stream().map((p) -> p.getName()).toList();
         return null;

@@ -9,6 +9,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
 
+@Deprecated
 public class LootTableEditor implements InventoryHolder {
     public static HashMap<UUID, LootTableEditor> sessions = new HashMap<>();
     private Inventory gui;

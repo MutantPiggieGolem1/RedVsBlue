@@ -1,7 +1,9 @@
 package me.stephenminer.redvblue.arena;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -13,9 +15,9 @@ import javax.annotation.Nullable;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
-import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.util.BlockVector;
 
+import me.stephenminer.redvblue.arena.chests.NewLootChest;
 import me.stephenminer.redvblue.util.ArenaConfigUtil;
 import me.stephenminer.redvblue.util.BlockRange;
 
@@ -29,6 +31,7 @@ public class ArenaConfig implements ConfigurationSerializable {
     private @Nullable Location lobby;
     private final @Nonnull Map<BlockRange, Material> walls; // Empty if none created
     private final @Nonnull Map<String, BlockVector> spawns;
+    private final @Nonnull Set<NewLootChest> lootCaches;
     private int wallFallTime;
 
     public static ArenaConfig builder(String id, BlockRange bounds) {
@@ -44,15 +47,20 @@ public class ArenaConfig implements ConfigurationSerializable {
         this.bounds = bounds;
         this.walls = new HashMap<>();
         this.spawns = new HashMap<>();
+        this.lootCaches = new HashSet<>();
         this.wallFallTime = wallFallTime;
     }
 
     public @Nullable Arena build() {
         if (lobby == null || spawns.size() < 2) return null;
         var a = new Arena(id, bounds, lobby, walls, spawns, wallFallTime);
-        a.setLootChestsREPLACEME(LegacyArenaConfig.loadLootChests(id));
+        a.setLootChestsREPLACEME(lootCaches);
         Arena.arenas.add(a);
         return a;
+    }
+
+    public boolean isBuildable() {
+        return lobby != null && spawns.size() >= 2;
     }
 
     public boolean contains(Location l) {
@@ -77,6 +85,7 @@ public class ArenaConfig implements ConfigurationSerializable {
     }
 
     public boolean createWall(Material mat, BlockRange range) {
+        if (!bounds.toBoundingBox().contains(range.toBoundingBox())) throw new IllegalArgumentException("Walls must be built inside the arena.");
         for (var wallRange : walls.keySet()) {
             if (range.toBoundingBox().overlaps(wallRange.toBoundingBox()))
                 return false;
@@ -97,13 +106,19 @@ public class ArenaConfig implements ConfigurationSerializable {
         lobby = l;
     }
 
-    public BlockVector setSpawn(String team, BlockVector l) {
+    public BlockVector setSpawn(String team, BlockVector l) throws IllegalArgumentException {
+        if (!bounds.contains(l)) throw new IllegalArgumentException("Spawns must be inside the arena.");
         var old = spawns.containsKey(team) ? spawns.get(team).clone() : null;
         spawns.put(team, l);
         return old;
     }
 
+    public @Nonnegative int getWallFallTime() {
+        return wallFallTime;
+    }
+
     public void setWallFallTime(@Nonnegative int newTime) {
+        if (newTime < 0) throw new IllegalArgumentException("Wall Fall Times must be nonnegative.");
         wallFallTime = newTime;
     }
 
@@ -129,6 +144,12 @@ public class ArenaConfig implements ConfigurationSerializable {
             spawnsSerialized.put(e.getKey(), e.getValue().serialize());
         }
         dat.put("spawns", spawnsSerialized);
+
+        List<String> lootSerialized = new ArrayList<>();
+        for (var e : lootCaches) {
+            lootSerialized.add(e.toString());
+        }
+        dat.put("loot-caches", lootSerialized);
         
         dat.put("wallfalltime", wallFallTime);
         return dat;
@@ -148,31 +169,25 @@ public class ArenaConfig implements ConfigurationSerializable {
             lobby = Location.deserialize((Map<String, Object>) dat.get("lobby"));
         }
 
-        if (dat.containsKey("walls")) {
-            Map<BlockRange, Material> wallsDeserialized = new HashMap<>();
-            for (var e : ((Map<Map<String, Object>, String>) dat.get("walls")).entrySet()) {
-                wallsDeserialized.put(BlockRange.deserialize(e.getKey()), Material.getMaterial(e.getValue()));
-            }
-            walls = wallsDeserialized;
-        } else {
-            walls = new HashMap<>();
+        Map<BlockRange, Material> wallsDeserialized = new HashMap<>();
+        for (var e : ((Map<Map<String, Object>, String>) dat.get("walls")).entrySet()) {
+            wallsDeserialized.put(BlockRange.deserialize(e.getKey()), Material.getMaterial(e.getValue()));
         }
+        walls = wallsDeserialized;
         
-        if (dat.containsKey("spawns")) {
-            Map<String, BlockVector> spawnsDeserialized = new HashMap<>();
-            for (var e : ((Map<String, Map<String, Object>>) dat.get("spawns")).entrySet()) {
-                spawnsDeserialized.put(e.getKey(), BlockVector.deserialize(e.getValue()));
-            }
-            spawns = spawnsDeserialized;
-        } else {
-            spawns = new HashMap<>();
+        Map<String, BlockVector> spawnsDeserialized = new HashMap<>();
+        for (var e : ((Map<String, Map<String, Object>>) dat.get("spawns")).entrySet()) {
+            spawnsDeserialized.put(e.getKey(), BlockVector.deserialize(e.getValue()));
         }
+        spawns = spawnsDeserialized;
+
+        Set<NewLootChest> lootDeserialized = new HashSet<>();
+        for (var e : ((List<String>) dat.get("loot-caches"))) {
+            lootDeserialized.add(new NewLootChest(e));
+        }
+        lootCaches = lootDeserialized;
 
         assert dat.containsKey("wallfalltime");
         wallFallTime = (Integer) dat.get("wallfalltime");
-    }
-
-    static {
-        ConfigurationSerialization.registerClass(ArenaConfig.class);
     }
 }

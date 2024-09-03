@@ -9,6 +9,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
+@Deprecated
 public class NewLootTable {
     private final RedBlue plugin;
     private final String id;

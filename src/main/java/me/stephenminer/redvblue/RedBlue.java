@@ -7,29 +7,37 @@ import javax.annotation.Nonnull;
 import org.bukkit.Location;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import me.stephenminer.redvblue.arena.Arena;
-import me.stephenminer.redvblue.arena.chests.ChestSetupEvents;
+import me.stephenminer.redvblue.arena.ArenaConfig;
 import me.stephenminer.redvblue.commands.*;
 import me.stephenminer.redvblue.commands.impl.*;
 import me.stephenminer.redvblue.events.*;
 import me.stephenminer.redvblue.events.items.*;
 import me.stephenminer.redvblue.util.ArenaConfigUtil;
+import me.stephenminer.redvblue.util.BlockRange;
 import me.stephenminer.redvblue.util.ConfigFile;
 
 public final class RedBlue extends JavaPlugin {
     public ConfigFile tables;
 
     @Override
+    public void onLoad() {
+        ConfigurationSerialization.registerClass(BlockRange.class);
+        ConfigurationSerialization.registerClass(ArenaConfig.class);
+    }
+
+    @Override
     public void onEnable() {
         this.saveDefaultConfig();
         ArenaConfigUtil.initialize(this);
         this.tables = new ConfigFile(this, "loot-tables");
+
         registerCommands();
         registerEvents();
-        ArenaConfigUtil.reload();
     }
 
     @Override
@@ -47,19 +55,26 @@ public final class RedBlue extends JavaPlugin {
         pm.registerEvents(new LongRifleUse(this), this);
         pm.registerEvents(new ThrowingJuiceUse(), this);
         pm.registerEvents(new WindScrollUse(), this);
-        pm.registerEvents(new ChestSetupEvents(this), this);
+        // pm.registerEvents(new ChestSetupEvents(this), this);
         pm.registerEvents(new ArenaSelector.EventListener(), this);
     }
 
     
     /**
-     * /rvbconfig arena <id> 
-     *      spawn lobby/red/blue
-     *      wall
-     *          list
-     *          material <#> <mat>
-     *          delete <#>
-     *      delete
+     * /rvb
+     *      join
+     *      
+     * /rvbconfig
+     *      reload
+     *      minplayers <#>
+     *      maxplayers <#>
+     *      arena <id> 
+     *          spawn lobby/red/blue
+     *          wall
+     *              list
+     *              material <#> <mat>
+     *              delete <#>
+     *         delete
      */
     private void registerCommands() {
         register("rvb", new CommandTreeHandler(Map.of(
@@ -74,7 +89,8 @@ public final class RedBlue extends JavaPlugin {
             "maxplayers", new PlayerLimit(this, false),
             "arena", new ArenaCommandTreeHandler(Map.of(
                 "spawn", new ArenaSetLoc(),
-                // "wall", new ArenaWalls(), TODO implement
+                // "wall", new ArenaWalls(), SUBOPTIMAL implement
+                "falltime", new ArenaFallTime(),
                 "delete", new ArenaDelete()
             )) {
                 @Override

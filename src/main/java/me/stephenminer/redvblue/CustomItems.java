@@ -115,7 +115,8 @@ public enum CustomItems {
 
     public static void addKit(PlayerInventory inv, ChatColor color) {
         assert color.isColor();
-        var c1 = Color.fromRGB(color.asBungee().getColor().getRGB());
+        var c0 = color.asBungee().getColor();
+        var c1 = Color.fromRGB(c0 == null ? 0x964B00 : c0.getRGB());
         var c2 = colorMap.getOrDefault(color, DyeColor.BROWN);
 
         inv.setHelmet(new ItemStack(Material.CHAINMAIL_HELMET));

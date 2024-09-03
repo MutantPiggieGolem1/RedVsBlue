@@ -32,8 +32,8 @@ public class CommandTreeHandler implements TabExecutor, HandledCommand {
         if (sender instanceof Player && sub.permission() != null && !sender.hasPermission(sub.permission()))
             return null; // They don't have the permission to run the command
         var inprog = args[args.length - 1].toLowerCase();
-        var opts = sub.getOptions(args.length - 2);
-        return opts == null ? null : opts // subtract 2, because the first arg is this command's name
+        var opts = sub.getOptions(args.length - 2); // subtract 2, because the first arg is this command's name
+        return opts == null ? null : opts
             .stream().filter((o) -> ChatColor.stripColor(o).toLowerCase().startsWith(inprog)).toList();
     }
 
@@ -58,13 +58,14 @@ public class CommandTreeHandler implements TabExecutor, HandledCommand {
             return false;
         }
         var subArgs = Arrays.copyOfRange(args, 1, args.length);
-        for (int i = 0; i < subArgs.length; i++) {
-            var opts = sub.getOptions(i);
-            if (opts != null && !opts.contains(subArgs[i])) {
-                sender.sendMessage(ChatColor.RED + "Invalid arguments!");
-                return false;
+        if (!(sub instanceof CommandTreeHandler))
+            for (int i = 0; i < subArgs.length; i++) {
+                var opts = sub.getOptions(i);
+                if (opts != null && !opts.contains(subArgs[i])) {
+                    sender.sendMessage(ChatColor.RED + "Invalid arguments!");
+                    return false;
+                }
             }
-        }
         return sub.execute(sender, subArgs);
     }
 

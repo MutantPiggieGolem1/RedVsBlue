@@ -2,6 +2,7 @@ package me.stephenminer.redvblue.arena.chests;
 
 import org.bukkit.inventory.ItemStack;
 
+@Deprecated
 public class LootItem {
     private final ItemStack item;
     private int chance;

@@ -15,6 +15,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import me.stephenminer.redvblue.RedBlue;
 
+@Deprecated
 public class NewLootChest {
     private final RedBlue plugin;
     private Location loc;
