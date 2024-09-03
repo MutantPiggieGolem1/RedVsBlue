@@ -49,10 +49,7 @@ public class ArenaConfig implements ConfigurationSerializable {
 
     public @Nullable Arena build() {
         if (lobby == null || spawns.size() < 2) return null;
-        var world = bounds.world();
-        var a = new Arena(id, id, bounds, spawns.get("red").toLocation(world), spawns.get("blue").toLocation(world), lobby);
-        for (var wall : walls.entrySet()) a.addWall(new Wall(wall.getValue(), wall.getKey()));
-        a.setFallTime(wallFallTime);
+        var a = new Arena(id, bounds, lobby, walls, spawns, wallFallTime);
         Arena.arenas.add(a);
         return a;
     }

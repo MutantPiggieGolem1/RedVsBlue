@@ -9,7 +9,7 @@ import org.bukkit.entity.Player;
 import me.stephenminer.redvblue.arena.Arena;
 import me.stephenminer.redvblue.commands.HandledCommand;
 
-public class ForceEnd implements HandledCommand { // TODO combine with ForceStart
+public class ForceEnd implements HandledCommand { // SUBOPTIMAL combine with ForceStart
 
     @Override
     public boolean playerOnly() {
@@ -40,11 +40,10 @@ public class ForceEnd implements HandledCommand { // TODO combine with ForceStar
             String id = args[0].toLowerCase();
             a = Arena.arenaOf(id).get();
         }
-        if (!a.isStarted()) {
-            sender.sendMessage(ChatColor.RED + "You cannot end an arena that hasn't started!");
+        if (!a.forceEnd()) {
+            sender.sendMessage(ChatColor.RED + "Arena is already ending!");
             return false;
         }
-        a.end();
         return true;
     }
 

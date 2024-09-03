@@ -35,10 +35,7 @@ public final class RedBlue extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        for (Arena arena : Arena.arenas) {
-            arena.reset();
-            arena.forceEnd();
-        }
+        Arena.arenas.forEach(Arena::absoluteForceEnd);
         this.saveConfig();
         this.arenas.saveConfig();
         this.tables.saveConfig();
@@ -46,7 +43,7 @@ public final class RedBlue extends JavaPlugin {
 
     private void registerEvents() {
         PluginManager pm = getServer().getPluginManager();
-        pm.registerEvents(new PlayerHandling(this), this);
+        pm.registerEvents(new PlayerHandling(), this);
         pm.registerEvents(new SetupWandsUse(), this);
         pm.registerEvents(new LongRifleUse(this), this);
         pm.registerEvents(new ThrowingJuiceUse(), this);
@@ -89,7 +86,7 @@ public final class RedBlue extends JavaPlugin {
         )));
         register("rvbgive", new GiveCustom());
 
-        // TODO - not yet updated to new command framework
+        // SUBOPTIMAL not yet updated to new command framework
         register("rvbchest", new LootChestCmd());
         register("rvbloot", new LootTableCmd());
     }
@@ -139,11 +136,22 @@ public final class RedBlue extends JavaPlugin {
         super.reloadConfig();
     }
 
+    /**
+     * @return How many blockstates per tick to update
+     */
     public int loadRate() {
         return Math.max(7000, this.getConfig().getInt("settings.map-regen-rate"));
     }
 
     public int loadMinPlayers() {
         return this.getConfig().getInt("settings.playerlimit.min");
+    }
+
+    public int loadArenaStartDelay() {
+        return this.getConfig().getInt("settings.timings.waitbeforestart");
+    }
+
+    public int loadArenaRevealDelay() {
+        return this.getConfig().getInt("settings.timings.waitbeforereveal");
     }
 }

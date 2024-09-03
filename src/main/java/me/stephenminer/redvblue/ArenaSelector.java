@@ -56,9 +56,10 @@ public class ArenaSelector implements InventoryHolder {
         meta.setDisplayName(ChatColor.AQUA + id);
         meta.setLore(List.of(
                 ChatColor.BLUE + (arena == null ? "0" : "" + arena.getPlayerCount()) + " players",
-                arena == null || !arena.isStarted() ? ChatColor.GREEN + "Waiting to start"
-                        : ChatColor.YELLOW + "Game Started",
-                ChatColor.YELLOW + "Click to join!"));
+                arena == null || arena.isJoinable() ?
+                    ChatColor.GREEN + "Click to join!" :
+                    ChatColor.YELLOW + "Click to spectate!"
+        ));
         item.setItemMeta(meta);
         return item;
     }

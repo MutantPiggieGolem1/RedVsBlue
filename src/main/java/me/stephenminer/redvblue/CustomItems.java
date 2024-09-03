@@ -2,6 +2,8 @@ package me.stephenminer.redvblue;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.Map;
+import java.util.HashMap;
 
 import javax.annotation.Nullable;
 
@@ -11,7 +13,6 @@ import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.block.Banner;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -70,6 +71,22 @@ public enum CustomItems {
         ChatColor.BLACK + "windscroll"
     ), (meta) -> {
         meta.addEnchant(Enchantment.MENDING,1,true);
+    }),
+    TEAMPANTS(Material.LEATHER_LEGGINGS, null, List.of(
+        ChatColor.ITALIC + "Standard issue.",
+        ChatColor.BLACK + "teampants"
+    )),
+    TEAMBOOTS(Material.LEATHER_BOOTS, null, List.of(
+        ChatColor.ITALIC + "Standard issue.",
+        ChatColor.BLACK + "teamboots"
+    ), (meta) -> {
+        meta.addEnchant(Enchantment.FEATHER_FALLING,1,true);
+    }),
+    TEAMBANNER(Material.BROWN_BANNER, ChatColor.GOLD + "Team Standard", List.of(
+        ChatColor.ITALIC + "Standard issue.",
+        ChatColor.BLACK + "teambanner"
+    ), (meta) -> {
+        meta.addEnchant(Enchantment.THORNS, 3, true);
     });
 
     public final ItemStack mcitem;
@@ -79,7 +96,7 @@ public enum CustomItems {
     CustomItems(Material material, String displayName, List<String> lore, @Nullable MetadataCallback callback) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName(displayName);
+        if (displayName != null) meta.setDisplayName(displayName);
         meta.setLore(lore);
         meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_UNBREAKABLE, ItemFlag.HIDE_ENCHANTS);
         meta.setUnbreakable(true);
@@ -96,47 +113,52 @@ public enum CustomItems {
         return other.getLore().equals(mine.getLore());
     }
 
-    private static ItemStack teamPants(int team){
-        ItemStack item = new ItemStack(Material.LEATHER_LEGGINGS);
-        LeatherArmorMeta meta = (LeatherArmorMeta) item.getItemMeta();
-        meta.setColor(team == 0 ? Color.RED : Color.BLUE);
-        item.setItemMeta(meta);
-        return item;
-    }
-    private static ItemStack teamBoots(int team){
-        ItemStack item = new ItemStack(Material.LEATHER_BOOTS);
-        LeatherArmorMeta meta = (LeatherArmorMeta) item.getItemMeta();
-        meta.setColor(team == 0 ? Color.RED : Color.BLUE);
-        meta.addEnchant(Enchantment.FEATHER_FALLING,1,true);
-        item.setItemMeta(meta);
-        return item;
-    }
-    private static ItemStack teamShield(int team){
-        ItemStack item = new ItemStack(Material.SHIELD);
-        BlockStateMeta meta = (BlockStateMeta) item.getItemMeta();
-        Banner banner = (Banner) meta.getBlockState();
-        banner.setBaseColor(team == 0 ? DyeColor.RED : DyeColor.BLUE);
-        meta.setBlockState(banner);
-        meta.setUnbreakable(true);
-        item.setItemMeta(meta);
-        return item;
-    }
-    public static void outfitPlayer(Player player, int team){
-        PlayerInventory inv = player.getInventory();
+    public static void addKit(PlayerInventory inv, ChatColor color) {
+        assert color.isColor();
+        var c1 = Color.fromRGB(color.asBungee().getColor().getRGB());
+        var c2 = colorMap.getOrDefault(color, DyeColor.BROWN);
+
         inv.setHelmet(new ItemStack(Material.CHAINMAIL_HELMET));
         inv.setChestplate(new ItemStack(Material.CHAINMAIL_CHESTPLATE));
-        inv.setLeggings(teamPants(team));
-        inv.setBoots(teamBoots(team));
+
+        var leggings = TEAMPANTS.mcitem.clone();
+        ((LeatherArmorMeta) leggings.getItemMeta()).setColor(c1);
+        inv.setLeggings(leggings);
+
+        var boots = TEAMBOOTS.mcitem.clone();
+        ((LeatherArmorMeta) leggings.getItemMeta()).setColor(c1);
+        inv.setBoots(boots);
+
+        ItemStack shield = new ItemStack(Material.SHIELD);
+        var shieldMeta = (BlockStateMeta) shield.getItemMeta();
+        var shieldBlockState = (Banner) shieldMeta.getBlockState();
+        shieldBlockState.setBaseColor(c2);
+        shieldMeta.setBlockState(shieldBlockState);
+        shieldMeta.setUnbreakable(true);
+        shield.setItemMeta(shieldMeta);
+        inv.setItemInOffHand(shield);
+
         inv.addItem(new ItemStack(Material.STONE_AXE));
         inv.addItem(new ItemStack(Material.IRON_PICKAXE));
-        inv.setItemInOffHand(teamShield(team));
 
-        Material mat = team == 0 ? Material.RED_BANNER : Material.BLUE_BANNER;
-        ItemStack item = new ItemStack(mat);
-        ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName(ChatColor.GOLD + "Team Standard");
-        meta.addEnchant(Enchantment.THORNS, 3, true);
-        item.setItemMeta(meta);
-        inv.addItem(item);
+        var banner = TEAMBANNER.mcitem.clone();
+        banner.setType(Material.valueOf(c2.name()+"_BANNER"));
+        inv.addItem(banner);
     }
+
+    private static final Map<ChatColor, DyeColor> colorMap = new HashMap<>(13, 1) {{
+        put(ChatColor.WHITE, DyeColor.WHITE);
+        put(ChatColor.GOLD, DyeColor.ORANGE);
+        put(ChatColor.BLUE, DyeColor.LIGHT_BLUE);
+        put(ChatColor.YELLOW, DyeColor.YELLOW);
+        put(ChatColor.GREEN, DyeColor.LIME);
+        put(ChatColor.LIGHT_PURPLE, DyeColor.PINK);
+        put(ChatColor.GRAY, DyeColor.LIGHT_GRAY);
+        put(ChatColor.AQUA, DyeColor.CYAN);
+        put(ChatColor.DARK_PURPLE, DyeColor.PURPLE);
+        put(ChatColor.DARK_BLUE, DyeColor.BLUE);
+        put(ChatColor.DARK_GREEN, DyeColor.GREEN);
+        put(ChatColor.RED, DyeColor.RED);
+        put(ChatColor.BLACK, DyeColor.BLACK);
+    }};
 }

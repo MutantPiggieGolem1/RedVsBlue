@@ -2,4 +2,7 @@ settings:
   playerlimit:
     min: 2
     max: 28
+  timings:
+    waitbeforestart: 30
+    waitbeforereveal: 300
   roll-bound: 1000

@@ -1,13 +1,9 @@
 package me.stephenminer.redvblue.events;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.GameMode;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.type.Bed;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -16,46 +12,68 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.arena.Arena;
 
-public class PlayerHandling implements Listener { // TODO replace with worldguard
-    private final RedBlue plugin;
-
-    public PlayerHandling(RedBlue plugin) {
-        this.plugin = plugin;
-    }
+public class PlayerHandling implements Listener {
 
     @EventHandler
     public void stopLethal(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
-        if (event.getCause() == EntityDamageEvent.DamageCause.ENTITY_ATTACK)
+        if (event.getDamageSource().getCausingEntity() != null)
             return;
         var oa = Arena.arenaOf(player);
         if (!oa.isPresent()) return;
         Arena arena = oa.get();
-        double health = player.getHealth() - event.getFinalDamage();
-        if (health <= 0) {
-            event.setCancelled(true);
-            if (!arena.isStarted()) {
-                player.teleport(arena.getLobby());
-                return;
-            } else if (!arena.hasWallFallen()) {
-                player.teleport(arena.getSpawnFor(player));
-                return;
-            }
-            player.setGameMode(GameMode.SPECTATOR);
-            arena.broadcast(ChatColor.GOLD + "" + ChatColor.BOLD + "NOTICE: " + ChatColor.WHITE + player.getName()
-                    + " has been eliminated!");
-            player.sendMessage(ChatColor.RED + "You have been eliminated");
-            player.sendMessage(ChatColor.GOLD + "You may spectate or do /leaveRvB if you wish to leave!");
-            Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, arena::checkEnding, 5);
-            return;
-        }
+        if (arena.isEnded()) return;
+        if (player.getHealth() > event.getFinalDamage()) return;
+        event.setCancelled(true);
+        arena.killPlayer(player, null);
     }
 
+    @EventHandler
+    public void stopPLethal(EntityDamageByEntityEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        var oa = Arena.arenaOf(player);
+        if (!oa.isPresent()) return;
+        Arena arena = oa.get();
+        if (arena.isEnded()) return;
+        if (player.getHealth() > event.getFinalDamage()) return;
+        event.setCancelled(true);
+        arena.killPlayer(player, event.getDamager());
+    }
+
+    @EventHandler
+    public void onWorldChange(PlayerChangedWorldEvent event) {
+        Player player = event.getPlayer();
+        var oa = Arena.arenaOf(player);
+        if (!oa.isPresent()) return;
+        Arena arena = oa.get();
+        if (!arena.getWorld().equals(event.getPlayer().getWorld()))
+            arena.removePlayer(player, true);
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
+        var oa = Arena.arenaOf(player);
+        if (!oa.isPresent()) return;
+        Arena arena = oa.get();
+        arena.removePlayer(player, false);
+    }
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        var oa = Arena.disconnectedFrom(player);
+        if (!oa.isPresent()) return;
+        Arena arena = oa.get();
+        arena.addPlayer(player);
+    }
+
+    // SUBOPTIMAL replace protections with worldguard
     @EventHandler
     public void noBeds(PlayerInteractEvent event) {
         if (!event.hasBlock())
@@ -71,60 +89,12 @@ public class PlayerHandling implements Listener { // TODO replace with worldguar
     }
 
     @EventHandler
-    public void stopPLethal(EntityDamageByEntityEvent event) {
-        if (!(event.getEntity() instanceof Player player)) return;
-        var oa = Arena.arenaOf(player);
-        if (!oa.isPresent()) return;
-        Arena arena = oa.get();
-        double health = player.getHealth() - event.getFinalDamage();
-        if (health >= 0) return;
-        event.setCancelled(true);
-        if (!arena.isStarted()) {
-            player.teleport(arena.getLobby());
-        } else if (!arena.hasWallFallen()) {
-            player.teleport(arena.getSpawnFor(player));
-        } else {
-            player.sendMessage(ChatColor.RED + "You have been eliminated!");
-            String msg = ChatColor.GOLD + "" + ChatColor.BOLD + "NOTICE: " + ChatColor.WHITE + player.getName()
-                    + " has been eliminated by ";
-            if (event.getDamager() instanceof LivingEntity living) {
-                msg += living.getName();
-            } else if (event.getDamager() instanceof Projectile proj
-                    && proj.getShooter() instanceof LivingEntity living)
-                msg += living.getName() + "!";
-            arena.broadcast(msg);
-            player.setGameMode(GameMode.SPECTATOR);
-            arena.checkEnding();
-
-        }
-    }
-
-    @EventHandler
-    public void onWorldChange(PlayerChangedWorldEvent event) {
-        Player player = event.getPlayer();
-        var oa = Arena.arenaOf(player);
-        if (!oa.isPresent()) return;
-        Arena arena = oa.get();
-        if (!arena.getLobby().getWorld().equals(event.getPlayer().getWorld()))
-            arena.removePlayer(player);
-    }
-
-    @EventHandler
-    public void onQuit(PlayerQuitEvent event) {
-        Player player = event.getPlayer();
-        var oa = Arena.arenaOf(player);
-        if (!oa.isPresent()) return;
-        Arena arena = oa.get();
-        arena.disconnectPlayer(player);
-    }
-
-    @EventHandler
     public void handlePlacement(BlockPlaceEvent event) {
         Player player = event.getPlayer();
-        Arena a = Arena.arenaOf(player).get();
-        Block block = event.getBlock();
-        boolean pass = a.isStarted() && a.tryEdit(player, block);
-        if (!pass) {
+        var oa = Arena.arenaOf(player);
+        if (!oa.isPresent()) return;
+        Arena arena = oa.get();
+        if (!arena.canBreak(player, event.getBlock())) {
             event.setCancelled(true);
             player.sendMessage(ChatColor.RED + "You can't place blocks here!");
             return;
@@ -138,8 +108,7 @@ public class PlayerHandling implements Listener { // TODO replace with worldguar
         if (!oa.isPresent()) return;
         Arena arena = oa.get();
         Block block = event.getBlock();
-        boolean pass = arena.isStarted() && arena.tryEdit(player, block);
-        if (!pass) {
+        if (!arena.canBreak(player, block)) {
             event.setCancelled(true);
             player.sendMessage(ChatColor.RED + "you can't break blocks here");
             return;

@@ -40,11 +40,10 @@ public class ForceStart implements HandledCommand {
             String id = args[0].toLowerCase();
             a = Arena.arenaOf(id).get();
         }
-        if (a.isStarted()) {
-            sender.sendMessage(ChatColor.RED + "You cannot start an arena that's already started!");
+        if (!a.forceStart()) {
+            sender.sendMessage(ChatColor.RED + "Arena is already started / ending!");
             return false;
         }
-        a.start();
         return true;
     }
 

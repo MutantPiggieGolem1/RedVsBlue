@@ -32,6 +32,10 @@ public record BlockRange(World world, BlockVector p1, BlockVector p2) implements
         return BoundingBox.of(p1.clone().add(offset), p2.clone().add(offset));
     }
 
+    public Location center() {
+        return p1.getMidpoint(p2).toLocation(world);
+    }
+
     public boolean contains(BlockVector other) {
         return toBoundingBox().contains(other);
     }
