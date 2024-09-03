@@ -87,14 +87,14 @@ public class ChestSetupEvents implements Listener {
     }
 
     private void saveToArena(String arenaId, NewLootChest chest){
-        List<String> chests = plugin.arenas.getConfig().getStringList("arenas." + arenaId + ".loot-chests");
+        List<String> chests = ArenaConfigUtil.accessorThatShouldBeRemovedButIHaventYet().getConfig().getStringList("arenas." + arenaId + ".loot-chests");
         chests.add(chest.toString());
-        plugin.arenas.getConfig().set("arenas." + arenaId + ".loot-chests", chests);
-        plugin.arenas.saveConfig();
+        ArenaConfigUtil.accessorThatShouldBeRemovedButIHaventYet().getConfig().set("arenas." + arenaId + ".loot-chests", chests);
+        ArenaConfigUtil.accessorThatShouldBeRemovedButIHaventYet().saveConfig();
     }
 
     private boolean removeFromArena(String arenaId, Location loc){
-        List<String> chests = plugin.arenas.getConfig().getStringList("arenas." + arenaId + ".loot-chests");
+        List<String> chests = ArenaConfigUtil.accessorThatShouldBeRemovedButIHaventYet().getConfig().getStringList("arenas." + arenaId + ".loot-chests");
         boolean succeed = false;
         for (int i = chests.size()-1; i>=0; i--){
             String entry = chests.get(i);
@@ -104,8 +104,8 @@ public class ChestSetupEvents implements Listener {
                 break;
             }
         }
-        plugin.arenas.getConfig().set("arenas." + arenaId + ".loot-chests", chests);
-        plugin.arenas.saveConfig();
+        ArenaConfigUtil.accessorThatShouldBeRemovedButIHaventYet().getConfig().set("arenas." + arenaId + ".loot-chests", chests);
+        ArenaConfigUtil.accessorThatShouldBeRemovedButIHaventYet().saveConfig();
         return succeed;
     }
 

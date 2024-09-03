@@ -50,6 +50,7 @@ public class ArenaConfig implements ConfigurationSerializable {
     public @Nullable Arena build() {
         if (lobby == null || spawns.size() < 2) return null;
         var a = new Arena(id, bounds, lobby, walls, spawns, wallFallTime);
+        a.setLootChestsREPLACEME(LegacyArenaConfig.loadLootChests(id));
         Arena.arenas.add(a);
         return a;
     }
@@ -175,17 +176,3 @@ public class ArenaConfig implements ConfigurationSerializable {
         ConfigurationSerialization.registerClass(ArenaConfig.class);
     }
 }
-
-/* TODO implement
-public Set<NewLootChest> loadLootChests(){
-    String path = "arenas." + id + ".loot-chests";
-    Set<NewLootChest> chests = new HashSet<>();
-    if (!plugin.arenas.getConfig().contains(path)) return chests;
-    List<String> stringChests  = plugin.arenas.getConfig().getStringList(path);
-    for (String entry : stringChests){
-        NewLootChest lootChest = new NewLootChest(entry);
-        chests.add(lootChest);
-    }
-    return chests;
-}
-*/

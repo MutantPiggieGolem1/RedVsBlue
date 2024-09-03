@@ -20,24 +20,23 @@ import me.stephenminer.redvblue.util.ArenaConfigUtil;
 import me.stephenminer.redvblue.util.ConfigFile;
 
 public final class RedBlue extends JavaPlugin {
-    public ConfigFile arenas;
     public ConfigFile tables;
 
     @Override
     public void onEnable() {
         this.saveDefaultConfig();
-        this.arenas = new ConfigFile(this, "arenas");
+        ArenaConfigUtil.initialize(this);
         this.tables = new ConfigFile(this, "loot-tables");
         registerCommands();
         registerEvents();
-        ArenaConfigUtil.reloadArenaConfigs();
+        ArenaConfigUtil.reload();
     }
 
     @Override
     public void onDisable() {
         Arena.arenas.forEach(Arena::absoluteForceEnd);
         this.saveConfig();
-        this.arenas.saveConfig();
+        ArenaConfigUtil.save();
         this.tables.saveConfig();
     }
 
@@ -132,7 +131,7 @@ public final class RedBlue extends JavaPlugin {
 
     @Override
     public void reloadConfig() {
-        arenas.reloadConfig();
+        ArenaConfigUtil.reload();
         super.reloadConfig();
     }
 

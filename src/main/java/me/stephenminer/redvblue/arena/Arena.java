@@ -94,9 +94,9 @@ public class Arena {
         players = new HashSet<>();
 
         // Begin game loop
+        initializeBoard();
         this.period = ArenaPeriod.QUEUEING;
         saver.loadMap();
-        initializeBoard();
         new BukkitRunnable() {
             public void run() {update();}
         }.runTaskTimer(plugin, 0, 20 * 2); // Period should be any factor of 10 seconds
@@ -479,6 +479,7 @@ public class Arena {
             }
         }.runTaskTimer(plugin, 0, 20);
     }
+    // ===
 
     // Getters
     public String getId() {
@@ -622,5 +623,10 @@ public class Arena {
             }.runTaskTimer(plugin, 1, 1);
             return true;
         }
+    }
+
+    @Deprecated
+    public void setLootChestsREPLACEME(Set<NewLootChest> t) {
+        this.chests.addAll(t);
     }
 }

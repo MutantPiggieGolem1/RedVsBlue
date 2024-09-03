@@ -26,7 +26,7 @@ public class Reload implements HandledCommand {
     @Override
     public boolean execute(CommandSender sender, String[] args) {
         plugin.reloadConfig();
-        ArenaConfigUtil.reloadArenaConfigs();
+        ArenaConfigUtil.reload();
         sender.sendMessage(ChatColor.GREEN + "Reloaded Files");
         return true;
     }

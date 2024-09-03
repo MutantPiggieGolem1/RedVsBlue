@@ -7,7 +7,6 @@ import javax.annotation.Nullable;
 
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import me.stephenminer.redvblue.RedBlue;
 import me.stephenminer.redvblue.arena.ArenaConfig;
@@ -17,16 +16,22 @@ import me.stephenminer.redvblue.arena.ArenaConfig;
  * This is not in {@link ArenaConfig} because that class should know nothing of global configuration.
  */
 public class ArenaConfigUtil {
-    private static final ConfigFile cfgFile = JavaPlugin.getPlugin(RedBlue.class).arenas;
-    private static ConfigurationSection arenaConfigs = cfgFile.getConfig().getConfigurationSection("arenas");
+    private static ConfigFile cfgFile;
+    private static ConfigurationSection arenaConfigs;
 
-    public static void reloadArenaConfigs() {
+    public static void initialize(RedBlue plugin) {
+        cfgFile = new ConfigFile(plugin, "arenas");
+        reload();
+    }
+
+    public static void reload() {
         var cfg = cfgFile.getConfig();
         if (!cfg.isConfigurationSection("arenas")) cfg.createSection("arenas");
         arenaConfigs = cfgFile.getConfig().getConfigurationSection("arenas");
     }
 
     private static String deepToShallow(ArenaConfig arena) {
+        if (arenaConfigs == null) throw new IllegalStateException("arenaConfigs has not been initialized.");
         for (String key : arenaConfigs.getKeys(false)) {
             var a = arenaConfigs.getObject(key, ArenaConfig.class);
             if (a.id().equals(arena.id())) return key;
@@ -35,12 +40,13 @@ public class ArenaConfigUtil {
     }
 
     public static Set<String> idsOnFileShallow() {
-        return arenaConfigs == null ? Set.of() : arenaConfigs.getKeys(false);
+        if (arenaConfigs == null) throw new IllegalStateException("arenaConfigs has not been initialized.");
+        return arenaConfigs.getKeys(false);
     }
 
     private static Set<ArenaConfig> valuesOnFile() {
+        if (arenaConfigs == null) throw new IllegalStateException("arenaConfigs has not been initialized.");
         HashSet<ArenaConfig> builder = new HashSet<>();
-        if (arenaConfigs == null) return builder;
         for (String key : arenaConfigs.getKeys(false)) {
             var a = arenaConfigs.getObject(key, ArenaConfig.class);
             if (a != null) builder.add(a); // a will be null for malformed config
@@ -79,12 +85,24 @@ public class ArenaConfigUtil {
     }
 
     public static void saveToFileShallow(String id, ArenaConfig arena) {
+        if (arenaConfigs == null) throw new IllegalStateException("arenaConfigs has not been initialized.");
         arenaConfigs.set(id, arena);
         cfgFile.saveConfig();
     }
 
     public static void removeFromFileDeep(ArenaConfig arena) {
+        if (arenaConfigs == null) throw new IllegalStateException("arenaConfigs has not been initialized.");
         arenaConfigs.set(deepToShallow(arena), null);
         cfgFile.saveConfig();
+    }
+
+    public static void save() {
+        if (arenaConfigs == null) throw new IllegalStateException("arenaConfigs has not been initialized.");
+        cfgFile.saveConfig();
+    }
+
+    @Deprecated
+    public static ConfigFile accessorThatShouldBeRemovedButIHaventYet() {
+        return cfgFile;
     }
 }
