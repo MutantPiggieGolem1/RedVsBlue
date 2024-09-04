@@ -43,6 +43,11 @@ public record BlockRange(World world, BlockVector p1, BlockVector p2) implements
         return other.getWorld().equals(world) && toBoundingBox().contains(other.toVector());
     }
 
+    public int volume() {
+        var t = p1.subtract(p2);
+        return t.getBlockX() * t.getBlockY() * t.getBlockZ();
+    }
+
     @Override
     public final String toString() {
         return world.getName() + "/(" + p1.toString() + ")~(" + p2.toString() + ")";

@@ -51,7 +51,7 @@ public class ArenaConfig implements ConfigurationSerializable {
         this.wallFallTime = wallFallTime;
     }
 
-    public @Nullable Arena build() {
+    public @Nullable Arena build() { // *SHOULD* be called async
         if (lobby == null || spawns.size() < 2) return null;
         var a = new Arena(id, bounds, lobby, walls, spawns, wallFallTime);
         a.setLootChestsREPLACEME(lootCaches);

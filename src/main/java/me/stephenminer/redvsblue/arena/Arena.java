@@ -5,13 +5,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
+
+import javax.annotation.Nullable;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -39,6 +40,7 @@ import me.stephenminer.redvsblue.CustomItems;
 import me.stephenminer.redvsblue.RedVsBlue;
 import me.stephenminer.redvsblue.arena.chests.NewLootChest;
 import me.stephenminer.redvsblue.util.BlockRange;
+import me.stephenminer.redvsblue.util.Callback;
 
 public class Arena {
     public static Set<Arena> arenas = new HashSet<>();
@@ -56,7 +58,6 @@ public class Arena {
     }
 
     private final RedVsBlue plugin;
-    private final StateSaver saver = new StateSaver();
 
     // Loaded from ArenaConfig
     private final String id;
@@ -70,7 +71,8 @@ public class Arena {
     
     // Operational Vars
     private final Set<UUID> players;
-    private Scoreboard board;
+    private final Scoreboard board;
+    private @Nullable Set<BlockState> savedBlocks = null; // contains every block in the map, all saved to be reset after.
     private ArenaPeriod period;
     // ===
 
@@ -92,11 +94,11 @@ public class Arena {
         // ===
 
         players = new HashSet<>();
+        saveTask.runTaskAsynchronously(plugin);
 
         // Begin game loop
         initializeBoard();
         this.period = ArenaPeriod.QUEUEING;
-        saver.loadMap();
         new BukkitRunnable() {
             public void run() {update();}
         }.runTaskTimer(plugin, 0, 20 * 2); // Period should be any factor of 10 seconds
@@ -116,7 +118,7 @@ public class Arena {
                 player.setScoreboard(board);
                 player.teleport(lobby);
             break;
-            case STARTING:
+            case START:
             case RUNNING:
                 Team pt = board.getEntryTeam(player.getName());
                 if (pt != null) { // player rejoined
@@ -136,7 +138,7 @@ public class Arena {
                 pt = board.getEntryTeam(player.getName());
                 broadcast(ChatColor.GREEN + player.getName() + " has joined the game on the '"+ pt.getDisplayName() +"' team!");
             break;
-            case ENDING:
+            case END:
             case ENDED:
                 player.sendMessage(ChatColor.YELLOW + "The game has already ended!");
             return;
@@ -152,7 +154,7 @@ public class Arena {
                 broadcast(ChatColor.RED + player.getDisplayName() + " has quit the game! "+getPlayerNumStr());
             break;
             case RUNNING:
-            case STARTING:
+            case START:
                 if (intentional) {
                     broadcast(ChatColor.RED + player.getDisplayName() + " has quit the game!");
                 } else {
@@ -161,7 +163,7 @@ public class Arena {
                     return;
                 }
             break;
-            case ENDING:
+            case END:
             case ENDED:
             return;
         }
@@ -175,11 +177,11 @@ public class Arena {
             case QUEUEING:
                 player.teleport(lobby);
             break;
-            case ENDING:
+            case END:
             case ENDED:
                 player.damage(Float.MAX_VALUE, cause);
             break;
-            case STARTING:
+            case START:
                 if (!player.getScoreboard().equals(board)) {
                     player.setScoreboard(board);
                     firstSpawn(player);
@@ -199,14 +201,14 @@ public class Arena {
 
     public boolean forceStart() {
         if (period != ArenaPeriod.QUEUEING) return false;
-        period = ArenaPeriod.STARTING;
+        period = ArenaPeriod.START;
         update();
         return true;
     }
 
     public boolean forceEnd() {
-        if (period == ArenaPeriod.ENDING || period == ArenaPeriod.ENDED) return false;
-        period = ArenaPeriod.ENDING;
+        if (period == ArenaPeriod.END || period == ArenaPeriod.ENDED) return false;
+        period = ArenaPeriod.END;
         update();
         return true;
     }
@@ -219,8 +221,7 @@ public class Arena {
             Player p = Bukkit.getPlayer(uuid);
             if (p != null) clean(p);
         }
-        saver.loadMap();
-        period = ArenaPeriod.ENDED;
+        loadMap(() -> period = ArenaPeriod.ENDED);
     }
     // ===
 
@@ -288,20 +289,18 @@ public class Arena {
     private long fallBy = 0;
     private Long revealBy = null;
     private void update() { // MUST BE SCHEDULED ON A FACTOR OF 10 SECONDS
-        if (!Arena.arenas.contains(this)) period = ArenaPeriod.ENDED;
+        if (!Arena.arenas.contains(this)) return;
         
         switch (period) {
-            case QUEUEING:
+            case QUEUEING: // Repeats
                 long now = System.currentTimeMillis();
                 boolean isFull = players.size() >= plugin.loadMinPlayers();
                 if (startAttempt != null) {
                     if (now >= startAttempt) {
                         if (isFull) {
-                            period = ArenaPeriod.RUNNING;
                             broadcast(Sound.ENTITY_CAT_PURREOW, 50, 1);
                             broadcastTitle(ChatColor.GREEN + "The Game Has Begun!");
-                            period = ArenaPeriod.STARTING;
-                            break;
+                            period = ArenaPeriod.START;
                         } else {
                             startAttempt += 500 * plugin.loadArenaStartDelay();
                             broadcast(ChatColor.RED + "Failed to start! " + getPlayerNumStr());
@@ -313,11 +312,13 @@ public class Arena {
                             broadcast(ChatColor.GOLD + "" + secondsUntil + " seconds until game start!");
                         }
                     }
-                } else if (isFull) {
+                } else if (isFull && savedBlocks != null) { // there are enough players, AND the arena is saved
                     startAttempt = now + 1000 * plugin.loadArenaStartDelay();
+                    broadcast(Sound.ENTITY_CAT_STRAY_AMBIENT, 2, 1);
                 }
-                break;
-            case STARTING:
+                if (period != ArenaPeriod.START) break;
+            case START: // Runs Once
+                assert savedBlocks != null;
                 walls.forEach(Wall::buildWall);
                 chests.forEach(NewLootChest::loadChest);
         
@@ -329,11 +330,12 @@ public class Arena {
                 fallBy = startAttempt + 1000 * wallFallTime;
                 int rd = plugin.loadArenaRevealDelay();
                 revealBy = rd < 0 ? null : startAttempt + 1000 * rd;
-                break;
-            case RUNNING:
+
+                period = ArenaPeriod.RUNNING;
+            case RUNNING: // Repeats
                 long liveTeams = spawns.keySet().stream().filter((t) -> t.getEntries().stream().anyMatch(this::isOnline)).count();
                 if (liveTeams < 2) {
-                    period = ArenaPeriod.ENDING;
+                    period = ArenaPeriod.END;
                     update();
                     return;
                 }
@@ -361,7 +363,7 @@ public class Arena {
                 }
 
                 break;
-            case ENDING:
+            case END: // Runs Once
                 for (Team t : spawns.keySet()) {
                     if (!t.getEntries().stream().anyMatch(this::isOnline)) continue;
                     broadcast(
@@ -374,22 +376,18 @@ public class Arena {
                     );
                     break;
                 }
-                period = ArenaPeriod.ENDED;
-                final Arena thisOuter = this;
-                new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        for (UUID uuid : players) {
-                            Player p = Bukkit.getPlayer(uuid);
-                            if (p != null) clean(p);
-                        }
-                        players.clear();
-                        Arena.arenas.remove(thisOuter);
-                        assert saver.loadMap();
+                for (UUID uuid : players) {
+                    Player p = Bukkit.getPlayer(uuid);
+                    if (p == null) {
+                        plugin.getLogger().warning("Tried to remove non-existent player '"+uuid.toString()+"' from closing arena '"+id+"'.");
+                        continue;
                     }
-                }.runTaskLater(plugin, 100);
-                break;
-            case ENDED: // Waiting for the runnable to finish
+                    clean(p);
+                }
+                players.clear();
+                loadMap(() -> Arena.arenas.remove(this));
+                period = ArenaPeriod.ENDED;
+            case ENDED: // Repeats, Waiting for the runnable to finish
                 break;
         }
     }
@@ -451,7 +449,7 @@ public class Arena {
                 Team time = board.getTeam("time");
                 time.setPrefix(switch (period) {
                     case QUEUEING -> "Waiting";
-                    case STARTING -> "Loading";
+                    case START -> "Loading";
                     case RUNNING -> {
                         long now = System.currentTimeMillis();
                         Long s = null;
@@ -467,7 +465,7 @@ public class Arena {
                         if (prefix == null || s == null) yield "Deathmatch";
                         yield prefix + " in " + String.format("%02d:%02d", s / 60, s % 60);
                     }
-                    case ENDING -> "Game Over";
+                    case END -> "Game Over";
                     case ENDED -> "---";
                 });
                 
@@ -504,11 +502,11 @@ public class Arena {
     }
 
     public boolean isJoinable() {
-        return period == ArenaPeriod.QUEUEING || period == ArenaPeriod.STARTING || (period == ArenaPeriod.RUNNING && !hasWallFallen());
+        return period == ArenaPeriod.QUEUEING || period == ArenaPeriod.START || (period == ArenaPeriod.RUNNING && !hasWallFallen());
     }
 
     public boolean isEnded() {
-        return period == ArenaPeriod.ENDING || period == ArenaPeriod.ENDED;
+        return period == ArenaPeriod.END || period == ArenaPeriod.ENDED;
     }
 
     public boolean canBreak(Player player, Block block) {
@@ -579,55 +577,41 @@ public class Arena {
     }
     // ===
 
+    // Saving & Loading
+    private final BukkitRunnable saveTask = new BukkitRunnable() {
+        public void run() {
+            savedBlocks = null; // Clear the states.
+            Set<BlockState> temp = new HashSet<>(bounds.volume());
+            bounds.forEach((Location l) -> temp.add(l.getBlock().getState()));
+            savedBlocks = Set.copyOf(temp); // This is done to prevent concurrent modification
+        }
+    };
+
+    private boolean loadMap(Callback onFinish) {
+        if (savedBlocks == null) throw new IllegalStateException("The map cannot be loaded without being saved first.");
+        new BukkitRunnable() {
+            @SuppressWarnings("null")
+            private final Iterator<BlockState> statesIter = savedBlocks.iterator();
+            @Override
+            public void run() {
+                int c = 0;
+                while (statesIter.hasNext()) {
+                    if (c++ >= plugin.loadRate()) return; // couldnt care less if this is off by 1
+                    statesIter.next().update(true);
+                }
+                plugin.getLogger().info(ChatColor.GOLD + "" + ChatColor.BOLD + "Arena Finished Loading");
+                onFinish.run();
+                this.cancel();
+            }
+        }.runTaskTimer(plugin, 0, 1);
+        return true;
+    }
+    // ===
+
     private enum ArenaPeriod {
-        QUEUEING, STARTING, RUNNING, ENDING, ENDED
+        QUEUEING, START, RUNNING, END, ENDED
     }
-
-    private class StateSaver { // FIXME integrate this into the state machine
-        private final List<BlockState> states;
-        private boolean saving, loading;
-
-        public StateSaver() {
-            states = new ArrayList<>();
-            loading = saving = false;
-        }
-
-        @SuppressWarnings("unused")
-        public boolean saveMap() {
-            if (loading || saving) return false;
-            saving = true;
-            states.clear();
-            new BukkitRunnable(){
-                @Override
-                public void run() {
-                    bounds.forEach((Location l) -> states.add(l.getBlock().getState()));
-                    saving = false;
-                }
-            }.runTaskAsynchronously(plugin);
-            return true;
-        }
-
-        public boolean loadMap() {
-            if (loading || saving) return false;
-            loading = true;
-            new BukkitRunnable() {
-                private final Iterator<BlockState> statesIter = states.iterator();
-                @Override
-                public void run() {
-                    int c = 0;
-                    while (statesIter.hasNext()) {
-                        if (c++ >= plugin.loadRate()) return; // couldnt care less if this is off by 1
-                        statesIter.next().update(true);
-                    }
-                    plugin.getLogger().info(ChatColor.GOLD + "" + ChatColor.BOLD + "Arena Finished Loading");
-                    loading = false;
-                    this.cancel();
-                }
-            }.runTaskTimer(plugin, 1, 1);
-            return true;
-        }
-    }
-
+    
     @Deprecated
     public void setLootChestsREPLACEME(Set<NewLootChest> t) {
         this.chests.addAll(t);
