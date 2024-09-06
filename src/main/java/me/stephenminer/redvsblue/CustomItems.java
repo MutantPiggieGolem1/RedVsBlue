@@ -40,6 +40,12 @@ public enum CustomItems {
         ChatColor.YELLOW + "Left-Click select",
         ChatColor.BLACK + "wall-remover"
     )),
+    LOOTWAND(Material.GOLDEN_SHOVEL, ChatColor.GOLD + "Loot-Cache Wand", List.of(
+        ChatColor.ITALIC + "Configures lootable arena containers",
+        ChatColor.YELLOW + "Left-Click Unlink Container",
+        ChatColor.YELLOW + "Right-Click Link Container",
+        ChatColor.BLACK + "loot-wand"
+    )),
     THROWINGJUICE(Material.NETHER_STAR, ChatColor.DARK_AQUA + "Throwing Juice", List.of(
         ChatColor.ITALIC + "A hearty way to help a friend!",
         ChatColor.ITALIC + "Shoot an AOE healing beam",

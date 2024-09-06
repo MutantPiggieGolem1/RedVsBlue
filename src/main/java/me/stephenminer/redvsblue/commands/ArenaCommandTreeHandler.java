@@ -64,13 +64,14 @@ public class ArenaCommandTreeHandler extends CommandTreeHandler {
             return false;
         }
         var subArgs = Arrays.copyOfRange(args, 2, args.length);
-        for (int i = 0; i < subArgs.length; i++) {
-            var opts = sub.getOptions(oa, i);
-            if (opts != null && !opts.contains(subArgs[i])) {
-                sender.sendMessage(ChatColor.RED + "Invalid arguments!");
-                return false;
+        if (!(sub instanceof CommandTreeHandler))
+            for (int i = 0; i < subArgs.length; i++) {
+                var opts = sub.getOptions(oa, i);
+                if (opts != null && !opts.contains(subArgs[i])) {
+                    sender.sendMessage(ChatColor.RED + "Invalid arguments!");
+                    return false;
+                }
             }
-        }
         if (!sub.execute(sender, oa, subArgs)) {
             return false;
         }

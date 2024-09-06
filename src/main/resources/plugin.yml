@@ -11,8 +11,3 @@ commands:
 
   rvbgive:
     permission: "rvb.commands.give"
-  
-  rvbchest:
-    permission: "rvb.commands.lootchest"
-  rvbloot:
-    permission: "rvb.commands.lootchest"

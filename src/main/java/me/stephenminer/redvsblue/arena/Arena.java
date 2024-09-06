@@ -19,12 +19,15 @@ import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.loot.LootTable;
+import org.bukkit.loot.Lootable;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -38,7 +41,6 @@ import org.bukkit.util.Vector;
 
 import me.stephenminer.redvsblue.CustomItems;
 import me.stephenminer.redvsblue.RedVsBlue;
-import me.stephenminer.redvsblue.arena.chests.NewLootChest;
 import me.stephenminer.redvsblue.util.BlockRange;
 import me.stephenminer.redvsblue.util.Callback;
 
@@ -65,7 +67,7 @@ public class Arena {
     private final Location lobby;
     private final Set<Wall> walls;
     private final Map<Team, BlockVector> spawns;
-    private final Set<NewLootChest> chests;
+    private final Map<Location, LootTable> lootCaches;
     private final int wallFallTime;
     // ===
     
@@ -76,7 +78,8 @@ public class Arena {
     private ArenaPeriod period;
     // ===
 
-    public Arena(String id, BlockRange bounds, Location lobby, Map<BlockRange, Material> walls, Map<String, BlockVector> spawns, int wallFallTime) {
+
+    public Arena(String id, BlockRange bounds, Location lobby, Map<BlockRange, Material> walls, Map<String, BlockVector> spawns, Map<BlockVector, String> lootCaches, int wallFallTime) {
         this.plugin = RedVsBlue.getPlugin(RedVsBlue.class);
         this.board = Bukkit.getScoreboardManager().getNewScoreboard();
 
@@ -89,7 +92,20 @@ public class Arena {
         for (var spawn : spawns.entrySet()) {
             this.spawns.put(createTeam(spawn.getKey()), spawn.getValue());
         }
-        this.chests = new HashSet<>();
+        this.lootCaches = new HashMap<>();
+        for (var cache : lootCaches.entrySet()) {
+            var nk = NamespacedKey.fromString(cache.getValue());
+            if (nk == null) {
+                plugin.getLogger().warning("[Arena '"+ id +"'] Invalid loot table key '"+cache.getValue()+"'.");
+                continue;
+            }
+            var lt = plugin.getServer().getLootTable(nk);
+            if (lt == null) {
+                plugin.getLogger().warning("[Arena '"+ id +"'] Missing loot table for key '"+nk+"'.");
+                continue;
+            }
+            this.lootCaches.put(cache.getKey().toLocation(bounds.world()), lt);
+        }
         this.wallFallTime = wallFallTime;
         // ===
 
@@ -228,7 +244,7 @@ public class Arena {
     // Player Management
     private void spawn(Player player) {
         var team = board.getEntryTeam(player.getName());
-        player.teleport(spawns.get(team).toLocation(bounds.world()));
+        player.teleport(spawns.get(team).toLocation(getWorld()));
         player.setHealth(20);
         player.setFoodLevel(20);
         player.setSaturation(5);
@@ -318,9 +334,18 @@ public class Arena {
                 }
                 if (period != ArenaPeriod.START) break;
             case START: // Runs Once
-                assert savedBlocks != null;
-                walls.forEach(Wall::buildWall);
-                chests.forEach(NewLootChest::loadChest);
+                assert savedBlocks != null; // ensure world is saved
+
+                walls.forEach(Wall::buildWall); // raise the walls
+
+                for (var cache : lootCaches.entrySet()) { // load the loot
+                    var block = cache.getKey().getBlock();
+                    if (!(block instanceof Lootable l)) {
+                        plugin.getLogger().warning("[Arena '"+ id +"'] Unlinked loot table at "+block.getLocation());
+                        continue;
+                    }
+                    l.setLootTable(cache.getValue());
+                }
         
                 var copy = new ArrayList<UUID>(players);
                 Collections.shuffle(copy);
@@ -353,7 +378,7 @@ public class Arena {
                     for (String name : team.getEntries()) {
                         var op = plugin.getServer().getPlayerExact(name);
                         if (op == null) {
-                            plugin.getLogger().warning("Tried to reveal player '"+ name +"' that doesn't exist!");
+                            plugin.getLogger().warning("[Arena '"+ id +"'] Tried to reveal player '"+ name +"' that doesn't exist!");
                             continue;
                         }
                         reveal(op);
@@ -379,7 +404,7 @@ public class Arena {
                 for (UUID uuid : players) {
                     Player p = Bukkit.getPlayer(uuid);
                     if (p == null) {
-                        plugin.getLogger().warning("Tried to remove non-existent player '"+uuid.toString()+"' from closing arena '"+id+"'.");
+                        plugin.getLogger().warning("[Arena '"+ id +"'] Tried to remove nonexistant player '"+uuid.toString()+"'.");
                         continue;
                     }
                     clean(p);
@@ -399,7 +424,7 @@ public class Arena {
         try {
             t.setColor(ChatColor.valueOf(name.toUpperCase()));
         } catch (Exception ignored) {
-            plugin.getLogger().info("Arena '" + id + "' registered team '" + name + "' without a color analogue!");
+            plugin.getLogger().info("[Arena '"+ id +"'] Team '" + name + "' registered without a color analogue!");
         }
         t.setAllowFriendlyFire(false);
         t.setPrefix(
@@ -448,7 +473,7 @@ public class Arena {
         
                 Team time = board.getTeam("time");
                 time.setPrefix(switch (period) {
-                    case QUEUEING -> "Waiting";
+                    case QUEUEING -> players.size() >= plugin.loadMinPlayers() ? "Queueing" : "Waiting";
                     case START -> "Loading";
                     case RUNNING -> {
                         long now = System.currentTimeMillis();
@@ -528,7 +553,7 @@ public class Arena {
     // Utils
     private Team getSmallestTeam() {
         var smallest = spawns.keySet().stream().mapToInt(Team::getSize).min();
-        if (!smallest.isPresent()) return null;
+        if (!smallest.isPresent()) throw new IllegalStateException("getSmallestTeam() called with no teams!");
         var onlySmallest = spawns.keySet().stream().filter((t) -> t.getSize() == smallest.getAsInt()).toList();
         if (onlySmallest.isEmpty()) return null;
         return onlySmallest.size() > 1 ? onlySmallest.get(ThreadLocalRandom.current().nextInt(onlySmallest.size())) : onlySmallest.get(0);
@@ -555,25 +580,28 @@ public class Arena {
     }
     
     private void broadcast(String... msg) {
-        for (UUID uuid : players) {
-            Player p = Bukkit.getPlayer(uuid);
-            if (p == null || !p.isOnline()) continue;
-            p.sendMessage(msg);
-        }
+        activePlayers().forEach(p -> p.sendMessage(msg));
     }
 
     private void broadcast(Sound sound, float vol, float pitch) {
-        for (UUID uuid : players) {
-            Player p = Bukkit.getPlayer(uuid);
-            p.playSound(p, sound, vol, pitch);
-        }
+        activePlayers().forEach(p -> p.playSound(p, sound, vol, pitch));
     }
 
     private void broadcastTitle(String msg) {
+        activePlayers().forEach(p -> p.sendTitle(msg, "", 5, 40, 5));
+    }
+
+    private Set<Player> activePlayers() {
+        Set<Player> out = new HashSet<>();
         for (UUID uuid : players) {
             Player p = Bukkit.getPlayer(uuid);
-            p.sendTitle(msg, "", 5, 40, 5);
+            if (p == null || !p.isOnline()) {
+                plugin.getLogger().warning("[Arena '"+ id +"'] Nonexistant or offline player @"+uuid+" wasn't removed!");
+                continue;
+            }
+            out.add(p);
         }
+        return out;
     }
     // ===
 
@@ -599,7 +627,6 @@ public class Arena {
                     if (c++ >= plugin.loadRate()) return; // couldnt care less if this is off by 1
                     statesIter.next().update(true);
                 }
-                plugin.getLogger().info(ChatColor.GOLD + "" + ChatColor.BOLD + "Arena Finished Loading");
                 onFinish.run();
                 this.cancel();
             }
@@ -610,10 +637,5 @@ public class Arena {
 
     private enum ArenaPeriod {
         QUEUEING, START, RUNNING, END, ENDED
-    }
-    
-    @Deprecated
-    public void setLootChestsREPLACEME(Set<NewLootChest> t) {
-        this.chests.addAll(t);
     }
 }

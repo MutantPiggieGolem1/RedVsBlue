@@ -21,7 +21,6 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BlockVector;
 
 import me.stephenminer.redvsblue.CustomItems;
@@ -45,8 +44,7 @@ public class SetupWandsUse implements Listener {
     public void arenaWandLocs(PlayerInteractEvent event){
         if (!event.hasItem() || event.getAction() == Action.PHYSICAL) return;
         Player player = event.getPlayer();
-        ItemStack item = event.getItem();
-        if (!CustomItems.ARENAWAND.is(item)) return;
+        if (!CustomItems.ARENAWAND.is(event.getItem())) return;
         Action action = event.getAction();
         UUID uuid = player.getUniqueId();
         event.setCancelled(true);
@@ -118,8 +116,7 @@ public class SetupWandsUse implements Listener {
     public void createWallLocs(PlayerInteractEvent event){
         if (!event.hasItem() || event.getAction() == Action.PHYSICAL) return;
         Player player = event.getPlayer();
-        ItemStack item = event.getItem();
-        if (!CustomItems.WALLWAND.is(item)) return;
+        if (!CustomItems.WALLWAND.is(event.getItem())) return;
         Action action = event.getAction();
         UUID uuid = player.getUniqueId();
         event.setCancelled(true);
@@ -212,7 +209,10 @@ public class SetupWandsUse implements Listener {
     @EventHandler
     public void deleteWallLocs(BlockBreakEvent event){
         Player player = event.getPlayer();
-        if (!CustomItems.WALLREMOVER.is(player.getInventory().getItemInMainHand())) return;
+        if (
+            !CustomItems.WALLREMOVER.is(player.getInventory().getItemInMainHand()) &&
+            !CustomItems.WALLREMOVER.is(player.getInventory().getItemInOffHand())
+        ) return;
         event.setCancelled(true);
 
         var arena = ArenaConfigUtil.findOnFileDeep(event.getBlock().getLocation());

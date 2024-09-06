@@ -5,4 +5,3 @@ settings:
   timings:
     waitbeforestart: 30
     waitbeforereveal: 300
-  roll-bound: 1000

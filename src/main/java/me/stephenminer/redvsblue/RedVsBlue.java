@@ -47,29 +47,35 @@ public final class RedVsBlue extends JavaPlugin {
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new PlayerHandling(), this);
         pm.registerEvents(new SetupWandsUse(), this);
+        pm.registerEvents(new LootWandUse(this), this);
         pm.registerEvents(new LongRifleUse(this), this);
         pm.registerEvents(new ThrowingJuiceUse(), this);
         pm.registerEvents(new WindScrollUse(), this);
-        // pm.registerEvents(new ChestSetupEvents(this), this);
         pm.registerEvents(new ArenaSelector.EventListener(), this);
     }
 
     
     /**
      * /rvb
-     *      join
+     *      join/leave [id] [player]
+     *      forcestart/forceend [id]
      *      
      * /rvbconfig
      *      reload
-     *      minplayers <#>
-     *      maxplayers <#>
+     *      minplayers [#]
+     *      maxplayers [#]
      *      arena <id> 
      *          spawn lobby/red/blue
      *          wall
      *              list
-     *              material <#> <mat>
+     *              material <#> [mat]
      *              delete <#>
-     *         delete
+     *          loot
+     *              [delete <#>]
+     *          falltime [#]
+     *          delete
+     * 
+     * /rvbgive <item> [#] [player]
      */
     private void registerCommands() {
         register("rvb", new CommandTreeHandler(Map.of(
@@ -85,6 +91,7 @@ public final class RedVsBlue extends JavaPlugin {
             "arena", new ArenaCommandTreeHandler(Map.of(
                 "spawn", new ArenaSetLoc(),
                 // "wall", new ArenaWalls(), SUBOPTIMAL implement
+                "loot", new ArenaLoot(),
                 "falltime", new ArenaFallTime(),
                 "delete", new ArenaDelete()
             )) {
@@ -95,10 +102,6 @@ public final class RedVsBlue extends JavaPlugin {
             }
         )));
         register("rvbgive", new GiveCustom());
-
-        // SUBOPTIMAL not yet updated to new command framework
-        register("rvbchest", new LootChestCmd());
-        register("rvbloot", new LootTableCmd());
     }
 
     private void register(String name, CommandExecutor executor) {

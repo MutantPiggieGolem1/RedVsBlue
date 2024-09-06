@@ -1,12 +1,11 @@
 package me.stephenminer.redvsblue.arena;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.LinkedHashMap;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
@@ -17,7 +16,6 @@ import org.bukkit.Material;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.util.BlockVector;
 
-import me.stephenminer.redvsblue.arena.chests.NewLootChest;
 import me.stephenminer.redvsblue.util.ArenaConfigUtil;
 import me.stephenminer.redvsblue.util.BlockRange;
 
@@ -31,7 +29,7 @@ public class ArenaConfig implements ConfigurationSerializable {
     private @Nullable Location lobby;
     private final @Nonnull Map<BlockRange, Material> walls; // Empty if none created
     private final @Nonnull Map<String, BlockVector> spawns;
-    private final @Nonnull Set<NewLootChest> lootCaches;
+    private final @Nonnull LinkedHashMap<BlockVector, String> lootCaches;
     private int wallFallTime;
 
     public static ArenaConfig builder(String id, BlockRange bounds) {
@@ -47,14 +45,13 @@ public class ArenaConfig implements ConfigurationSerializable {
         this.bounds = bounds;
         this.walls = new HashMap<>();
         this.spawns = new HashMap<>();
-        this.lootCaches = new HashSet<>();
+        this.lootCaches = new LinkedHashMap<>();
         this.wallFallTime = wallFallTime;
     }
 
     public @Nullable Arena build() { // *SHOULD* be called async
         if (lobby == null || spawns.size() < 2) return null;
-        var a = new Arena(id, bounds, lobby, walls, spawns, wallFallTime);
-        a.setLootChestsREPLACEME(lootCaches);
+        var a = new Arena(id, bounds, lobby, walls, spawns, lootCaches, wallFallTime);
         Arena.arenas.add(a);
         return a;
     }
@@ -102,6 +99,27 @@ public class ArenaConfig implements ConfigurationSerializable {
         return true;
     }
 
+    public LinkedHashMap<Location, String> getLootCaches() {
+        LinkedHashMap<Location, String> out = new LinkedHashMap<>();
+        for (var lc : lootCaches.entrySet()) {
+            out.put(lc.getKey().toLocation(bounds.world()), lc.getValue());
+        }
+        return out;
+    }
+
+    public boolean createLootCache(BlockVector block, String lootTable) {
+        if (lootCaches.containsKey(block)) return false;
+        return lootCaches.put(block, lootTable) == null;
+    }
+
+    public boolean deleteLootCache(Location loc) {
+        return loc.getWorld().equals(bounds.world()) && deleteLootCache(new BlockVector(loc.toVector()));
+    }
+
+    public boolean deleteLootCache(BlockVector block) {
+        return lootCaches.remove(block) != null;
+    }
+
     public void setLobby(Location l) {
         lobby = l;
     }
@@ -145,9 +163,9 @@ public class ArenaConfig implements ConfigurationSerializable {
         }
         dat.put("spawns", spawnsSerialized);
 
-        List<String> lootSerialized = new ArrayList<>();
-        for (var e : lootCaches) {
-            lootSerialized.add(e.toString());
+        Map<Map<String, Object>, String> lootSerialized = new HashMap<>();
+        for (var e : lootCaches.entrySet()) {
+            lootSerialized.put(e.getKey().serialize(), e.getValue());
         }
         dat.put("loot-caches", lootSerialized);
         
@@ -181,13 +199,13 @@ public class ArenaConfig implements ConfigurationSerializable {
         }
         spawns = spawnsDeserialized;
 
-        Set<NewLootChest> lootDeserialized = new HashSet<>();
-        for (var e : ((List<String>) dat.get("loot-caches"))) {
-            lootDeserialized.add(new NewLootChest(e));
+        LinkedHashMap<BlockVector, String> lootDeserialized = new LinkedHashMap<>();
+        for (var e : ((Map<Map<String, Object>, String>) dat.get("loot-caches")).entrySet()) {
+            lootDeserialized.put(BlockVector.deserialize(e.getKey()), e.getValue());
         }
         lootCaches = lootDeserialized;
 
         assert dat.containsKey("wallfalltime");
-        wallFallTime = (Integer) dat.get("wallfalltime");
+        wallFallTime = (int) dat.get("wallfalltime");
     }
 }
