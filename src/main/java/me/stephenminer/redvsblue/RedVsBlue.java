@@ -14,11 +14,8 @@ import me.stephenminer.redvsblue.commands.impl.*;
 import me.stephenminer.redvsblue.events.*;
 import me.stephenminer.redvsblue.events.items.*;
 import me.stephenminer.redvsblue.util.ArenaConfigUtil;
-import me.stephenminer.redvsblue.util.ConfigFile;
 
 public final class RedVsBlue extends JavaPlugin {
-    public ConfigFile tables;
-
     @Override
     public void onLoad() {
         ConfigurationSerialization.registerClass(me.stephenminer.redvsblue.util.BlockRange.class);
@@ -29,7 +26,6 @@ public final class RedVsBlue extends JavaPlugin {
     public void onEnable() {
         this.saveDefaultConfig();
         ArenaConfigUtil.initialize(this);
-        this.tables = new ConfigFile(this, "loot-tables");
 
         registerCommands();
         registerEvents();
@@ -40,7 +36,6 @@ public final class RedVsBlue extends JavaPlugin {
         Arena.arenas.forEach(Arena::absoluteForceEnd);
         this.saveConfig();
         ArenaConfigUtil.save();
-        this.tables.saveConfig();
     }
 
     private void registerEvents() {
