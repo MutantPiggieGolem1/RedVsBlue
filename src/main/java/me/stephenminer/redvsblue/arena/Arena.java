@@ -279,8 +279,8 @@ public class Arena {
     }
 
     private void spectate(Player player) {
-        var team = board.getEntryTeam(player.getName());
-        if (team != null) team.removeEntry(player.getName()); // remove them from their team
+        var ot = board.getEntryTeam(player.getName());
+        if (ot != null) ot.removeEntry(player.getName()); // remove them from their team
         removeEffects(player);
         player.setGameMode(GameMode.SPECTATOR);
         player.teleport(bounds.center());
@@ -289,7 +289,8 @@ public class Arena {
 
     private void clean(Player player) {
         player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard()); // Reset their scoreboard
-        board.getEntryTeam(player.getName()).removeEntry(player.getName()); // remove them from their team
+        var ot = board.getEntryTeam(player.getName()); // not everybody is on a team yet- like when queueing
+        if (ot != null) ot.removeEntry(player.getName()); // remove them from their team
         player.setGameMode(GameMode.SURVIVAL);
         player.getInventory().clear();
         removeEffects(player);
@@ -565,7 +566,7 @@ public class Arena {
     }
 
     private String getPlayerNumStr() {
-        return "( "+players.size() + "/" + plugin.loadMinPlayers() + " players)";
+        return "("+players.size() + "/" + plugin.loadMinPlayers() + " players)";
     }
 
     public boolean hasWallFallen() {
