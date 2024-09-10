@@ -85,6 +85,7 @@ public final class RedVsBlue extends JavaPlugin {
             "maxplayers", new PlayerLimit(this, false),
             "arena", new ArenaCommandTreeHandler(Map.of(
                 "spawn", new ArenaSetLoc(),
+                "rmteam", new ArenaRemoveTeam(),
                 // "wall", new ArenaWalls(), SUBOPTIMAL implement
                 "loot", new ArenaLoot(),
                 "falltime", new ArenaFallTime(),

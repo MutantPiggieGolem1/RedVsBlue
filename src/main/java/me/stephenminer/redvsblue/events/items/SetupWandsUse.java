@@ -189,7 +189,7 @@ public class SetupWandsUse implements Listener {
                 return;
             }
             try {
-                if (inprog.arena.get().createWall(mat, inprog.toRange())) {
+                if (inprog.arena.get().createWall(mat, inprog.toRange())) { // FIXME doesnt work async
                     ArenaConfigUtil.saveToFileShallow(inprog.arena.get());
                     player.sendMessage(ChatColor.GREEN + "Wall created and added to arena '" + inprog.arena.get().id() + "'!");
                 } else {

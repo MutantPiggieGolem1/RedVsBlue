@@ -12,6 +12,8 @@ import org.bukkit.util.BlockVector;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 
+import com.google.common.base.Objects;
+
 public record BlockRange(World world, BlockVector p1, BlockVector p2) implements ConfigurationSerializable {
     public void forEach(LocationCallback callback) {
         var min = BlockVector.getMinimum(p1, p2);
@@ -45,7 +47,7 @@ public record BlockRange(World world, BlockVector p1, BlockVector p2) implements
 
     public int volume() {
         var t = p1.subtract(p2);
-        return t.getBlockX() * t.getBlockY() * t.getBlockZ();
+        return Math.abs(t.getBlockX() * t.getBlockY() * t.getBlockZ());
     }
 
     @Override
@@ -76,5 +78,16 @@ public record BlockRange(World world, BlockVector p1, BlockVector p2) implements
             BlockVector.deserialize((Map<String,Object>) dat.get("p1")),
             BlockVector.deserialize((Map<String,Object>) dat.get("p2"))
         );
+    }
+
+    @Override
+    public final int hashCode() {
+        return Objects.hashCode(world, p1, p2);
+    }
+
+    @Override
+    public final boolean equals(Object arg0) {
+        if (!(arg0 instanceof BlockRange other)) return false;
+        return other.world.equals(world) && other.p1.equals(p1) && other.p2.equals(p2);
     }
 }

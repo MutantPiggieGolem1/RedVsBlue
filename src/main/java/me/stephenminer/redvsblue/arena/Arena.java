@@ -43,6 +43,7 @@ import me.stephenminer.redvsblue.CustomItems;
 import me.stephenminer.redvsblue.RedVsBlue;
 import me.stephenminer.redvsblue.util.BlockRange;
 import me.stephenminer.redvsblue.util.Callback;
+import me.stephenminer.redvsblue.util.StringCaser;
 
 public class Arena {
     public static Set<Arena> arenas = new HashSet<>();
@@ -302,9 +303,9 @@ public class Arena {
     // ===
 
     // State Management
-    private Long startAttempt = null;
-    private long fallBy = 0;
-    private Long revealBy = null;
+    private Long startAttempt = null; // when to next try to start the game (unix timestamp)
+    private long fallBy = 0; // when the walls should fall (unix timestamp)
+    private Long revealBy = null; // when players should be revealed (unix timestamp)
     private void update() { // MUST BE SCHEDULED ON A FACTOR OF 10 SECONDS
         if (!Arena.arenas.contains(this)) return;
         
@@ -395,8 +396,8 @@ public class Arena {
                     broadcast(
                         ChatColor.RED + "GAME OVER",
                         "--------------------------",
-                        ChatColor.GOLD + "" + ChatColor.BOLD + t.getDisplayName() + " Team Wins!!!",
-                        ChatColor.GOLD + "Members: ",
+                        t.getColor() + "" + ChatColor.BOLD + StringCaser.toTitleCase(t.getDisplayName()) + " Team Wins!!!",
+                        ChatColor.DARK_AQUA + "Members: ",
                         " > " + String.join(",", t.getEntries()),
                         "--------------------------"
                     );
@@ -435,7 +436,7 @@ public class Arena {
         t.setAllowFriendlyFire(false);
         t.setPrefix(
             ChatColor.DARK_AQUA + "[" +
-            t.getColor() + "" + ChatColor.BOLD + name.substring(0, 1).toUpperCase() + name.substring(1) + 
+            t.getColor() + "" + ChatColor.BOLD + StringCaser.toTitleCase(name) + 
             ChatColor.RESET + ChatColor.DARK_AQUA + "] " + ChatColor.RESET
         );
         t.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.FOR_OTHER_TEAMS);
@@ -472,7 +473,7 @@ public class Arena {
                 for (var team : spawns.keySet()) {
                     Team count = board.getTeam(team.getName()+"-count");
                     count.setPrefix(
-                        team.getColor() + team.getName().substring(0, 1).toUpperCase() + team.getName().substring(1) + " Team: " +
+                        team.getColor() + StringCaser.toTitleCase(team.getDisplayName()) + " Team: " +
                         ChatColor.RESET + team.getEntries().stream().filter(outerThis::isOnline).count() + " Alive"
                     );
                 }

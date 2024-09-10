@@ -9,6 +9,7 @@ import org.bukkit.util.BlockVector;
 
 import me.stephenminer.redvsblue.arena.ArenaConfig;
 import me.stephenminer.redvsblue.commands.ArenaCommandTreeHandler.ArenaHandledCommand;
+import me.stephenminer.redvsblue.util.StringCaser;
 
 public class ArenaSetLoc implements ArenaHandledCommand {
 
@@ -31,6 +32,13 @@ public class ArenaSetLoc implements ArenaHandledCommand {
             arena.setLobby(l);
             wasSet = "Lobby";
         } else {
+            try {
+                var c = ChatColor.valueOf(arg.toUpperCase());
+                if (c.isFormat()) throw new IllegalArgumentException(); // just to pass to the catch block
+            } catch (IllegalArgumentException e) {
+                sender.sendMessage(ChatColor.RED + "Team names must be valid minecraft colors.");
+                return false;
+            }
             BlockVector r;
             try {
                 r = arena.setSpawn(arg, new BlockVector(l.toVector()));
@@ -39,7 +47,7 @@ public class ArenaSetLoc implements ArenaHandledCommand {
                 return false;
             }
             if (r != null) old = r.toString();
-            wasSet = arg.substring(0, 1).toUpperCase() + arg.substring(1) + " Spawn";
+            wasSet = StringCaser.toTitleCase(arg) + " Spawn";
         }
         if (!old.isEmpty()) old += " ";
         sender.sendMessage(ChatColor.GREEN + wasSet + ": " + ChatColor.LIGHT_PURPLE + old + ChatColor.GREEN + "-> " + ChatColor.LIGHT_PURPLE + l.toString());

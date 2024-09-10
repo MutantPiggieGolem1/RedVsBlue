@@ -131,6 +131,10 @@ public class ArenaConfig implements ConfigurationSerializable {
         return old;
     }
 
+    public boolean delSpawn(String team) {
+        return spawns.remove(team) != null;
+    }
+
     public @Nonnegative int getWallFallTime() {
         return wallFallTime;
     }
