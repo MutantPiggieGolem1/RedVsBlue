@@ -32,7 +32,7 @@ public class ArenaCommandTreeHandler extends CommandTreeHandler {
         if (sender instanceof Player && sub.permission() != null && !sender.hasPermission(sub.permission()))
             return null; // They don't have the permission to run the command
         var inprog = args[args.length - 1].toLowerCase();
-        var opts = sub.getOptions(oa, args.length - 2); // subtract 2, because the first arg is this command's name
+        var opts = sub.getOptions(oa, args.length - 3); // subtract 3, because the first arg is this command's name, second is id
         return opts == null ? null : opts 
             .stream().filter((o) -> ChatColor.stripColor(o).toLowerCase().startsWith(inprog)).toList();
     }
