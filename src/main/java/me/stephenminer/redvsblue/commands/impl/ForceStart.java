@@ -41,7 +41,7 @@ public class ForceStart implements HandledCommand {
             a = Arena.arenaOf(id).get();
         }
         if (!a.forceStart()) {
-            sender.sendMessage(ChatColor.RED + "Arena is already started / ending!");
+            sender.sendMessage(ChatColor.RED + "Arena is already started / ending or is still saving!");
             return false;
         }
         return true;

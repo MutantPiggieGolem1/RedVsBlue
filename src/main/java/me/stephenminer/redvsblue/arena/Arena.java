@@ -130,9 +130,9 @@ public class Arena {
                 players.add(player.getUniqueId());
                 broadcast(ChatColor.GREEN + player.getName() + " has joined the game! "+getPlayerNumStr());
                 player.setGameMode(GameMode.ADVENTURE); // send them to the lobby
-                player.getInventory().clear();
                 player.setScoreboard(board);
                 player.teleport(lobby);
+                player.getInventory().clear();
             break;
             case START:
             case RUNNING:
@@ -216,7 +216,7 @@ public class Arena {
     }
 
     public boolean forceStart() {
-        if (period != ArenaPeriod.QUEUEING) return false;
+        if (period != ArenaPeriod.QUEUEING || savedBlocks == null) return false;
         period = ArenaPeriod.START;
         update();
         return true;
@@ -411,7 +411,12 @@ public class Arena {
                     clean(p);
                 }
                 players.clear();
-                loadMap(() -> Arena.arenas.remove(this));
+                try {
+                    loadMap(() -> Arena.arenas.remove(this));
+                } catch (IllegalStateException e) {
+                    plugin.getLogger().severe("[Arena '"+ id +"'] SEVERE\n" + e.getLocalizedMessage());
+                    Arena.arenas.remove(this);
+                }
                 period = ArenaPeriod.ENDED;
             case ENDED: // Repeats, Waiting for the runnable to finish
                 break;
