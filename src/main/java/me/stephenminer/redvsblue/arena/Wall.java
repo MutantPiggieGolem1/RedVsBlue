@@ -5,6 +5,7 @@ import org.bukkit.Material;
 import org.bukkit.util.Vector;
 
 import me.stephenminer.redvsblue.util.BlockRange;
+import me.stephenminer.redvsblue.util.WorldEditInterface;
 
 public class Wall {
     private BlockRange range;
@@ -14,7 +15,6 @@ public class Wall {
     public Wall(Material mat, BlockRange range){
         this.type = mat;
         this.range = range;
-        buildWall();
     }
 
     public boolean contains(Location loc) {
@@ -24,12 +24,10 @@ public class Wall {
     }
 
     public void buildWall() {
-        range.fill(type);
-        fallen = false;
+        WorldEditInterface.fill(range, type).thenAccept((x) -> fallen = false).join();
     }
     public void destroyWall() {
-        fallen = true;
-        range.fill(Material.AIR);
+        WorldEditInterface.fill(range, Material.AIR).thenAccept((x) -> fallen = true).join();
     }
 
     public boolean isFallen() { return fallen; }

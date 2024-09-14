@@ -1,7 +1,9 @@
 package me.stephenminer.redvsblue.util;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -12,16 +14,14 @@ import org.bukkit.util.BlockVector;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 
-import com.google.common.base.Objects;
-
 public record BlockRange(World world, BlockVector p1, BlockVector p2) implements ConfigurationSerializable {
-    public void forEach(LocationCallback callback) {
+    public void forEach(Consumer<? super Location> callback) {
         var min = BlockVector.getMinimum(p1, p2);
         var max = BlockVector.getMaximum(p1, p2);
         for (int x = min.getBlockX(); x <= max.getBlockX(); x++)
         for (int y = min.getBlockY(); y <= max.getBlockY(); y++)
         for (int z = min.getBlockZ(); z <= max.getBlockZ(); z++)
-            callback.run(new Location(world, x, y, z));
+            callback.accept(new Location(world, x, y, z));
     }
 
     public void fill(Material m) {
@@ -82,7 +82,7 @@ public record BlockRange(World world, BlockVector p1, BlockVector p2) implements
 
     @Override
     public final int hashCode() {
-        return Objects.hashCode(world, p1, p2);
+        return Objects.hash(world, p1, p2);
     }
 
     @Override

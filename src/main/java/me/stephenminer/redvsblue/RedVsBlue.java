@@ -113,13 +113,6 @@ public final class RedVsBlue extends JavaPlugin {
         super.reloadConfig();
     }
 
-    /**
-     * @return How many blockstates per tick to update
-     */
-    public int loadRate() {
-        return Math.max(7000, this.getConfig().getInt("settings.map-regen-rate"));
-    }
-
     public int loadMinPlayers() {
         return this.getConfig().getInt("settings.playerlimit.min");
     }

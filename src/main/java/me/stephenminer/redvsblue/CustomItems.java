@@ -1,9 +1,10 @@
 package me.stephenminer.redvsblue;
 
-import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
 
@@ -19,8 +20,6 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
-
-import me.stephenminer.redvsblue.util.MetadataCallback;
 
 public enum CustomItems {
     ARENAWAND(Material.WOODEN_SHOVEL, ChatColor.GOLD + "Arena Wand", List.of(
@@ -99,14 +98,14 @@ public enum CustomItems {
     CustomItems(Material material, String displayName, List<String> lore) {
         this(material, displayName, lore, null);
     }
-    CustomItems(Material material, String displayName, List<String> lore, @Nullable MetadataCallback callback) {
+    CustomItems(Material material, String displayName, List<String> lore, @Nullable Consumer<ItemMeta> callback) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (displayName != null) meta.setDisplayName(displayName);
         meta.setLore(lore);
         meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_UNBREAKABLE, ItemFlag.HIDE_ENCHANTS);
         meta.setUnbreakable(true);
-        if (callback != null) callback.run(meta);
+        if (callback != null) callback.accept(meta);
         item.setItemMeta(meta);
         this.mcitem = item;
     }

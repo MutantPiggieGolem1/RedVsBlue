@@ -4,15 +4,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
-
-import javax.annotation.Nullable;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -23,7 +21,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.loot.LootTable;
@@ -39,11 +36,13 @@ import org.bukkit.scoreboard.Team;
 import org.bukkit.util.BlockVector;
 import org.bukkit.util.Vector;
 
+import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
+
 import me.stephenminer.redvsblue.CustomItems;
 import me.stephenminer.redvsblue.RedVsBlue;
 import me.stephenminer.redvsblue.util.BlockRange;
-import me.stephenminer.redvsblue.util.Callback;
 import me.stephenminer.redvsblue.util.StringCaser;
+import me.stephenminer.redvsblue.util.WorldEditInterface;
 
 public class Arena {
     public static Set<Arena> arenas = new HashSet<>();
@@ -75,7 +74,7 @@ public class Arena {
     // Operational Vars
     private final Set<UUID> players;
     private final Scoreboard board;
-    private @Nullable Set<BlockState> savedBlocks = null; // contains every block in the map, all saved to be reset after.
+    private final CompletableFuture<BlockArrayClipboard> save;
     private ArenaPeriod period;
     // ===
 
@@ -111,7 +110,7 @@ public class Arena {
         // ===
 
         players = new HashSet<>();
-        saveTask.runTaskAsynchronously(plugin);
+        save = WorldEditInterface.copy(WorldEditInterface.toCuboidRegion(bounds));
 
         // Begin game loop
         initializeBoard();
@@ -217,7 +216,7 @@ public class Arena {
     }
 
     public boolean forceStart() {
-        if (period != ArenaPeriod.QUEUEING || savedBlocks == null) return false;
+        if (period != ArenaPeriod.QUEUEING || !save.isDone()) return false;
         period = ArenaPeriod.START;
         update();
         return true;
@@ -238,7 +237,7 @@ public class Arena {
             Player p = Bukkit.getPlayer(uuid);
             if (p != null) clean(p);
         }
-        loadMap(() -> period = ArenaPeriod.ENDED);
+        loadMapThen(() -> period = ArenaPeriod.ENDED);
     }
     // ===
 
@@ -330,13 +329,13 @@ public class Arena {
                             broadcast(ChatColor.GOLD + "" + secondsUntil + " seconds until game start!");
                         }
                     }
-                } else if (isFull && savedBlocks != null) { // there are enough players, AND the arena is saved
+                } else if (isFull && save.isDone()) { // there are enough players, AND the arena is saved
                     startAttempt = now + 1000 * plugin.loadArenaStartDelay();
                     broadcast(Sound.ENTITY_CAT_STRAY_AMBIENT, 2, 1);
                 }
                 if (period != ArenaPeriod.START) break;
             case START: // Runs Once
-                assert savedBlocks != null; // ensure world is saved
+                assert save.isDone(); // ensure world is saved
 
                 walls.forEach(Wall::buildWall); // raise the walls
 
@@ -412,17 +411,13 @@ public class Arena {
                     clean(p);
                 }
                 players.clear();
-                try {
-                    loadMap(() -> Arena.arenas.remove(this));
-                } catch (IllegalStateException e) {
-                    plugin.getLogger().severe("[Arena '"+ id +"'] SEVERE\n" + e.getLocalizedMessage());
-                    Arena.arenas.remove(this);
-                }
+                loadMapThen(() -> Arena.arenas.remove(this));
                 period = ArenaPeriod.ENDED;
-            case ENDED: // Repeats, Waiting for the runnable to finish
+            case ENDED: // Repeats
                 break;
         }
     }
+    // ===
 
     // Scoreboard
     private Team createTeam(String name) {
@@ -610,39 +605,21 @@ public class Arena {
         }
         return out;
     }
-    // ===
-
-    // Saving & Loading
-    private final BukkitRunnable saveTask = new BukkitRunnable() {
-        public void run() {
-            savedBlocks = null; // Clear the states.
-            Set<BlockState> temp = new HashSet<>(bounds.volume());
-            bounds.forEach((Location l) -> temp.add(l.getBlock().getState()));
-            savedBlocks = Set.copyOf(temp); // This is done to prevent concurrent modification
-        }
-    };
-
-    private boolean loadMap(Callback onFinish) {
-        if (savedBlocks == null) throw new IllegalStateException("The map cannot be loaded without being saved first.");
-        new BukkitRunnable() {
-            @SuppressWarnings("null")
-            private final Iterator<BlockState> statesIter = savedBlocks.iterator();
-            @Override
-            public void run() {
-                int c = 0;
-                while (statesIter.hasNext()) {
-                    if (c++ >= plugin.loadRate()) return; // couldnt care less if this is off by 1
-                    statesIter.next().update(true);
-                }
-                onFinish.run();
-                this.cancel();
-            }
-        }.runTaskTimer(plugin, 0, 1);
-        return true;
+    
+    private void loadMapThen(Callback callback) {
+        save.thenAccept((clipboard) -> {
+            WorldEditInterface.paste(WorldEditInterface.toCuboidRegion(bounds), clipboard);
+            callback.run();
+        });
     }
     // ===
 
     private enum ArenaPeriod {
         QUEUEING, START, RUNNING, END, ENDED
     }
+}
+
+@FunctionalInterface
+interface Callback {
+    public void run();
 }

@@ -18,6 +18,7 @@ import org.bukkit.util.BlockVector;
 
 import me.stephenminer.redvsblue.util.ArenaConfigUtil;
 import me.stephenminer.redvsblue.util.BlockRange;
+import me.stephenminer.redvsblue.util.WorldEditInterface;
 
 /**
  * A representation of an Arena on file (in the config)
@@ -88,14 +89,14 @@ public class ArenaConfig implements ConfigurationSerializable {
                 return false;
         }
         walls.put(range, mat);
-        range.fill(mat);
+        WorldEditInterface.fill(range, mat).join();
         return true;
     }
 
     public boolean destroyWall(BlockRange range) {
         if (!walls.containsKey(range)) return false;
         walls.remove(range);
-        range.fill(Material.AIR);
+        WorldEditInterface.fill(range, Material.AIR).join();
         return true;
     }
 
