@@ -81,8 +81,10 @@ public final class RedVsBlue extends JavaPlugin {
         )));
         register("rvbconfig", new CommandTreeHandler(Map.of(
             "reload", new Reload(this),
-            "minplayers", new PlayerLimit(this, true),
-            "maxplayers", new PlayerLimit(this, false),
+            "minplayers", new IntConfigChange(this, "playerlimit.min", "Minimum Players"),
+            "maxplayers", new IntConfigChange(this, "playerlimit.max", "Maximum Players"),
+            "startdelay", new IntConfigChange(this, "timings.waitbeforestart", "Start Delay"),
+            "revealdelay",new IntConfigChange(this, "timings.waitbeforereveal", "Player Reveal Delay"),
             "arena", new ArenaCommandTreeHandler(Map.of(
                 "spawn", new ArenaSetLoc(),
                 "rmteam", new ArenaRemoveTeam(),

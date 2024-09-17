@@ -87,13 +87,9 @@ public class ArenaConfigUtil {
         return null;
     }
 
-    public static void saveToFileShallow(ArenaConfig arena) {
-        saveToFileShallow(arena.id(), arena);
-    }
-
-    public static void saveToFileShallow(String id, ArenaConfig arena) {
+    public static void saveToFileDeep(ArenaConfig arena) {
         if (arenaConfigs == null) throw new IllegalStateException("arenaConfigs has not been initialized.");
-        arenaConfigs.set(id, arena);
+        arenaConfigs.set(arena.id(), arena);
         cfgFile.saveConfig();
     }
 

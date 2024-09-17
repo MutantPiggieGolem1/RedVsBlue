@@ -4,4 +4,4 @@ settings:
     max: 28
   timings:
     waitbeforestart: 30
-    waitbeforereveal: 300
+    waitbeforereveal: 1000

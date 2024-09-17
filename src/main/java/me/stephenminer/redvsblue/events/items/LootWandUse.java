@@ -42,6 +42,11 @@ public class LootWandUse implements Listener {
         Player player = event.getPlayer();
         var target = event.getClickedBlock();
 
+        if (!(target.getState() instanceof Lootable)) {
+            player.sendMessage(ChatColor.RED + "That block cannot accept loot tables!");
+            return;
+        }
+        
         var arena = ArenaConfigUtil.findOnFileDeep(target.getLocation());
         if (arena == null) {
             player.sendMessage(ChatColor.RED + "That block isn't in an arena!");
@@ -81,7 +86,7 @@ public class LootWandUse implements Listener {
                 }
                 break;
             default:
-                if (!(target instanceof Lootable)) {
+                if (!(target.getState() instanceof Lootable)) {
                     player.sendMessage(ChatColor.RED + "That block cannot accept loot tables!");
                     return;
                 }

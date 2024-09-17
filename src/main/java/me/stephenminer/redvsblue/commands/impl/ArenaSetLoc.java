@@ -24,7 +24,7 @@ public class ArenaSetLoc implements ArenaHandledCommand {
             sender.sendMessage(ChatColor.RED + "Invalid Arguments!");
             return false;
         }
-        var arg = args[0].toLowerCase();
+        var arg = args[0].toLowerCase().trim();
         var l = ((Player) sender).getLocation();
         String old = "";
         String wasSet;

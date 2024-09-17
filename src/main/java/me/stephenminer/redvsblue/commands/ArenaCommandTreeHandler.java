@@ -75,7 +75,7 @@ public class ArenaCommandTreeHandler extends CommandTreeHandler {
         if (!sub.execute(sender, oa, subArgs)) {
             return false;
         }
-        ArenaConfigUtil.saveToFileShallow(oa);
+        ArenaConfigUtil.saveToFileDeep(oa);
         return true;
     }
 

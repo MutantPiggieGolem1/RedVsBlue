@@ -9,7 +9,7 @@ import org.bukkit.entity.Player;
 import me.stephenminer.redvsblue.arena.Arena;
 import me.stephenminer.redvsblue.commands.HandledCommand;
 
-public class ForceEnd implements HandledCommand { // SUBOPTIMAL combine with ForceStart
+public class ForceEnd implements HandledCommand {
 
     @Override
     public boolean playerOnly() {

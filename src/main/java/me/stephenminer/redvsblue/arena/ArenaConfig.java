@@ -36,7 +36,7 @@ public class ArenaConfig implements ConfigurationSerializable {
     public static ArenaConfig builder(String id, BlockRange bounds) {
         if (id == null || bounds == null) return null;
         var arena = new ArenaConfig(id, bounds, 0);
-        ArenaConfigUtil.saveToFileShallow(id, arena);
+        ArenaConfigUtil.saveToFileDeep(arena);
         return arena;
     }
 

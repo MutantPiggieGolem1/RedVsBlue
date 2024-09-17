@@ -248,7 +248,7 @@ public class Arena {
         player.setHealth(20);
         player.setFoodLevel(20);
         player.setSaturation(5);
-        if (revealBy != null && revealBy >= System.currentTimeMillis()) {
+        if (revealBy != null && revealBy <= System.currentTimeMillis()) {
             reveal(player);
         }
     }
@@ -305,6 +305,7 @@ public class Arena {
     private Long startAttempt = null; // when to next try to start the game (unix timestamp)
     private long fallBy = 0; // when the walls should fall (unix timestamp)
     private Long revealBy = null; // when players should be revealed (unix timestamp)
+    private boolean initialRevealCompleted = false;
     private void update() { // MUST BE SCHEDULED ON A FACTOR OF 10 SECONDS
         if (!Arena.arenas.contains(this)) return;
         
@@ -340,7 +341,7 @@ public class Arena {
                 walls.forEach(Wall::buildWall); // raise the walls
 
                 for (var cache : lootCaches.entrySet()) { // load the loot
-                    var block = cache.getKey().getBlock();
+                    var block = cache.getKey().getBlock().getState();
                     if (!(block instanceof Lootable l)) {
                         plugin.getLogger().warning("[Arena '"+ id +"'] Unlinked loot table at "+block.getLocation());
                         continue;
@@ -368,13 +369,13 @@ public class Arena {
 
                 long now2 = System.currentTimeMillis();
 
-                if (fallBy >= now2) {
+                if (fallBy <= now2 && !hasWallFallen()) {
                     walls.forEach(Wall::destroyWall);
                     broadcast(Sound.EVENT_RAID_HORN, 244, 1);
                     broadcastTitle(ChatColor.YELLOW + "The Walls Have Fallen!");
                 }
 
-                if (revealBy != null && revealBy >= now2) {
+                if (revealBy != null && revealBy <= now2 && !initialRevealCompleted) {
                     for (var team : spawns.keySet())
                     for (String name : team.getEntries()) {
                         var op = plugin.getServer().getPlayerExact(name);
@@ -385,7 +386,8 @@ public class Arena {
                         reveal(op);
                     }
                     broadcast(Sound.BLOCK_ANVIL_LAND, 40, 1);
-                    broadcastTitle(ChatColor.RED + "Players Heave Been Revealed!");
+                    broadcastTitle(ChatColor.RED + "Players Have Been Revealed!");
+                    initialRevealCompleted = true;
                 }
 
                 break;

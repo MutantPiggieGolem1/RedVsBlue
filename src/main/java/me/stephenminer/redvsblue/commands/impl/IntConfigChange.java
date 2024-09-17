@@ -5,13 +5,15 @@ import org.bukkit.ChatColor;
 import me.stephenminer.redvsblue.RedVsBlue;
 import me.stephenminer.redvsblue.commands.HandledCommand;
 
-public class PlayerLimit implements HandledCommand {
+public class IntConfigChange implements HandledCommand {
     private final RedVsBlue plugin;
     private final String settingNode, prettyStr;
-    public PlayerLimit(RedVsBlue plugin, boolean isMinimum){
+
+    public IntConfigChange(RedVsBlue plugin, String settingNode, String prettyString) {
+        if (!plugin.getConfig().isInt("settings."+settingNode)) throw new IllegalArgumentException();
         this.plugin = plugin;
-        this.settingNode = "playerlimit."+(isMinimum ? "min" : "max");
-        this.prettyStr = (isMinimum ? "Min" : "Max")+"imum Players: ";
+        this.settingNode = settingNode;
+        this.prettyStr = prettyString + ": ";
     }
 
     @Override
