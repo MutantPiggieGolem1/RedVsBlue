@@ -12,6 +12,7 @@ import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.loot.Lootable;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.BlockVector;
 import java.util.UUID;
 import java.util.Map;
@@ -86,26 +87,31 @@ public class LootWandUse implements Listener {
                 }
                 break;
             default:
-                if (!(target.getState() instanceof Lootable)) {
-                    player.sendMessage(ChatColor.RED + "That block cannot accept loot tables!");
-                    return;
-                }
-                var key = NamespacedKey.fromString(arg, plugin);
-                if (key == null) {
-                    player.sendMessage(ChatColor.RED + "Invalid loot table key '" + key + "'.");
-                    return;
-                }
-                var table = plugin.getServer().getLootTable(key);
-                if (table == null) {
-                    player.sendMessage(ChatColor.RED + "Missing loot table for key '" + key + "'.");
-                    return;
-                }
-                if (arena.createLootCache(new BlockVector(targetLoc.toVector()), key.toString())) {
-                    player.sendMessage(ChatColor.GREEN + "Success! Linked a " + target.getType().toString() + " to "+key.toString()+".");
-                } else {
-                    player.sendMessage(ChatColor.YELLOW + "There was already a loot cache there!");
-                    return;
-                }
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        if (!(target.getState() instanceof Lootable)) {
+                            player.sendMessage(ChatColor.RED + "That block cannot accept loot tables!");
+                            return;
+                        }
+                        var key = NamespacedKey.fromString(arg, plugin);
+                        if (key == null) {
+                            player.sendMessage(ChatColor.RED + "Invalid loot table key '" + key + "'.");
+                            return;
+                        }
+                        var table = plugin.getServer().getLootTable(key);
+                        if (table == null) {
+                            player.sendMessage(ChatColor.RED + "Missing loot table for key '" + key + "'.");
+                            return;
+                        }
+                        if (arena.createLootCache(new BlockVector(targetLoc.toVector()), key.toString())) {
+                            player.sendMessage(ChatColor.GREEN + "Success! Linked a " + target.getType().toString() + " to "+key.toString()+".");
+                        } else {
+                            player.sendMessage(ChatColor.YELLOW + "There was already a loot cache there!");
+                            return;
+                        }
+                    }
+                }.runTask(plugin);
                 break;
         }
     }
