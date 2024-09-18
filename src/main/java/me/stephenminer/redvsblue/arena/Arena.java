@@ -17,10 +17,12 @@ import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Nameable;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.Container;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.loot.LootTable;
@@ -346,6 +348,13 @@ public class Arena {
                         plugin.getLogger().warning("[Arena '"+ id +"'] Unlinked loot table at "+block.getLocation());
                         continue;
                     }
+
+                    if (block instanceof Nameable n)
+                        n.setCustomName("RvB Loot Cache");
+
+                    if (block instanceof Container c)
+                        c.getInventory().clear();
+                        
                     l.setLootTable(cache.getValue());
                 }
         
@@ -395,9 +404,8 @@ public class Arena {
                 for (Team t : spawns.keySet()) {
                     if (!t.getEntries().stream().anyMatch(this::isOnline)) continue;
                     broadcast(
-                        ChatColor.RED + "GAME OVER",
                         "--------------------------",
-                        t.getColor() + "" + ChatColor.BOLD + StringCaser.toTitleCase(t.getDisplayName()) + " Team Wins!!!",
+                        t.getColor() + "" + ChatColor.BOLD + StringCaser.toTitleCase(t.getDisplayName()) + " Team Wins!",
                         ChatColor.DARK_AQUA + "Members: ",
                         " > " + String.join(",", t.getEntries()),
                         "--------------------------"
