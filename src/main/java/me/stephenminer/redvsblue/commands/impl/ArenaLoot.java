@@ -48,7 +48,7 @@ public class ArenaLoot implements ArenaHandledCommand {
             sender.sendMessage(ChatColor.GREEN + "Success! Unlinked a " + key.get().getBlock().getType().toString() + ".");
             return true;
         } else {
-            sender.sendMessage(ChatColor.RED + "Invalid Arguments!");
+            sender.sendMessage(ChatColor.RED + "Invalid arguments!");
             return false;
         }
     }

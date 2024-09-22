@@ -1,8 +1,7 @@
 package me.stephenminer.redvsblue.arena;
 
-import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.util.Vector;
+import org.bukkit.block.Block;
 
 import me.stephenminer.redvsblue.util.BlockRange;
 import me.stephenminer.redvsblue.util.WorldEditInterface;
@@ -17,10 +16,8 @@ public class Wall {
         this.range = range;
     }
 
-    public boolean contains(Location loc) {
-        Vector corner1 = loc.getBlock().getLocation().toVector();
-        Vector corner2 = corner1.clone().add(new Vector(1,1,1));
-        return range.toBoundingBox().overlaps(corner1, corner2);
+    public boolean contains(Block block) {
+        return range.contains(block);
     }
 
     public void buildWall() {

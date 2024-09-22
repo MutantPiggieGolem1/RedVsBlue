@@ -1,6 +1,5 @@
 package me.stephenminer.redvsblue.util;
 
-import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -21,9 +20,8 @@ public class ConfigFile {
         saveDefaultConfig();
     }
 
-    private FileConfiguration dataConfig = null;
-
     private File configFile = null;
+    private FileConfiguration dataConfig = null;
 
     public void reloadConfig() {
         if (this.configFile == null)
@@ -36,7 +34,8 @@ public class ConfigFile {
             this.dataConfig.setDefaults(defaultConfig);
         }
     }
-    public FileConfiguration getConfig(){
+
+    public FileConfiguration getConfig() {
         if (this.dataConfig == null)
             reloadConfig();
 
@@ -47,15 +46,16 @@ public class ConfigFile {
         if (this.dataConfig == null || this.configFile == null)
             return;
         try {
-            this.getConfig().save(this.configFile);
+            this.dataConfig.save(this.configFile);
         } catch (IOException e) {
-            Bukkit.broadcastMessage("COULD NOT SAVE TO CONFIG FILE: " + this.configFile);
+            plugin.getLogger().warning("Couldn't save configuration '" + name + "' to '" + this.configFile + "'.");
         }
     }
-    public void saveDefaultConfig(){
+
+    public void saveDefaultConfig() {
         if (this.configFile == null)
             this.configFile = new File(this.plugin.getDataFolder(), name + ".yml");
-        if (!this.configFile.exists()){
+        if (!this.configFile.exists()) {
             this.plugin.saveResource(name + ".yml", false);
         }
     }

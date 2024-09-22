@@ -29,6 +29,10 @@ public class ArenaFallTime implements ArenaHandledCommand {
             sender.sendMessage(ChatColor.RED + "'" + args[0] + "' is not a number!");
             return false;
         }
+        if (newVal < 0) {
+            sender.sendMessage(ChatColor.RED + "Fall time cannot be negative!");
+            return false;
+        }
         arena.setWallFallTime(newVal);
         sender.sendMessage(ChatColor.GREEN + "Arena '" + arena.id() + "' fall time: " +  ChatColor.LIGHT_PURPLE + oldVal + ChatColor.GREEN + " -> " + ChatColor.LIGHT_PURPLE + newVal);
         return true;

@@ -25,8 +25,8 @@ public class ArenaCommandTreeHandler extends CommandTreeHandler {
         if (args.length == 2) return List.copyOf(subCommands.keySet());
         var oa = ArenaConfigUtil.findOnFileShallow(args[0]);
         if (oa == null) return null;
+        if (!subCommands.containsKey(args[1])) return null;
         var sub = (ArenaHandledCommand) subCommands.get(args[1]);
-        if (sub == null) return null;
         if (sub instanceof CommandTreeHandler t)
             return t.onTabComplete(sender, command, args[0], Arrays.copyOfRange(args, 1, args.length));
         if (sender instanceof Player && sub.permission() != null && !sender.hasPermission(sub.permission()))
@@ -45,7 +45,7 @@ public class ArenaCommandTreeHandler extends CommandTreeHandler {
     @Override
     public boolean execute(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage(ChatColor.RED + "Invalid Arguments!");
+            sender.sendMessage(ChatColor.RED + "Invalid arguments!");
             return false;
         }
         var oa = ArenaConfigUtil.findOnFileShallow(args[0]);
@@ -54,7 +54,6 @@ public class ArenaCommandTreeHandler extends CommandTreeHandler {
             return false;
         }
         var sub = (ArenaHandledCommand) subCommands.get(args[1]);
-        assert sub != null; // getOptions validation should prevent this
         if (sender instanceof Player && sub.permission() != null && !sender.hasPermission(sub.permission())) {
             sender.sendMessage(ChatColor.RED + "You don't have permission to do that!");
             return false;

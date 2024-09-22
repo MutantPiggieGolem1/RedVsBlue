@@ -36,7 +36,6 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 import org.bukkit.util.BlockVector;
-import org.bukkit.util.Vector;
 
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 
@@ -50,9 +49,6 @@ public class Arena {
     public static Set<Arena> arenas = new HashSet<>();
     public static Optional<Arena> arenaOf(Player p) {
         return arenas.stream().filter((a) -> a.players.contains(p.getUniqueId())).findFirst();
-    }
-    public static Optional<Arena> arenaOf(Location l) {
-        return arenas.stream().filter((a) -> a.contains(l)).findFirst();
     }
     public static Optional<Arena> arenaOf(String id) {
         return arenas.stream().filter((a) -> a.getId().equalsIgnoreCase(id)).findFirst();
@@ -532,12 +528,6 @@ public class Arena {
         return bounds.world();
     }
 
-    public boolean contains(Location loc) {
-        var corner1 = loc.clone().getBlock().getLocation().toVector();
-        var corner2 = corner1.clone().add(new Vector(1, 1, 1));
-        return bounds.toBoundingBox().overlaps(corner1, corner2);
-    }
-
     public boolean isJoinable() {
         return period == ArenaPeriod.QUEUEING || period == ArenaPeriod.START || (period == ArenaPeriod.RUNNING && !hasWallFallen());
     }
@@ -551,9 +541,9 @@ public class Arena {
 
         if (!players.contains(player.getUniqueId())) return false; // outsiders cant edit arena
         for (Wall wall : walls) 
-            if (!wall.isFallen() && wall.contains(block.getLocation())) return false; // nobody can edit erect walls
+            if (!wall.isFallen() && wall.contains(block)) return false; // nobody can edit erect walls
         
-        if (!contains(block.getLocation())) { // insiders cant edit world
+        if (!bounds.contains(block)) { // insiders cant edit outside world
             player.sendMessage(ChatColor.RED + "You can not break blocks outside of arenas while you are a part of one!");
             return false;
         }

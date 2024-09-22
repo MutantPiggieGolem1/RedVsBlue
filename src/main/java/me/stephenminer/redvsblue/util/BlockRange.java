@@ -3,38 +3,29 @@ package me.stephenminer.redvsblue.util;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.util.BlockVector;
 import org.bukkit.util.BoundingBox;
-import org.bukkit.util.Vector;
 
 public record BlockRange(World world, BlockVector p1, BlockVector p2) implements ConfigurationSerializable {
-    public void forEach(Consumer<? super Location> callback) {
-        var min = BlockVector.getMinimum(p1, p2);
-        var max = BlockVector.getMaximum(p1, p2);
-        for (int x = min.getBlockX(); x <= max.getBlockX(); x++)
-        for (int y = min.getBlockY(); y <= max.getBlockY(); y++)
-        for (int z = min.getBlockZ(); z <= max.getBlockZ(); z++)
-            callback.accept(new Location(world, x, y, z));
-    }
-
-    public void fill(Material m) {
-        forEach((Location l) -> l.getBlock().setType(m));
-    }
-
-    public BoundingBox toBoundingBox() {
-        Vector offset = new Vector(0.5, 0.5, 0.5);
-        return BoundingBox.of(p1.clone().add(offset), p2.clone().add(offset));
+    /**
+     * @return A {@link BoundingBox} fully containing both corners of the range.
+     */
+    private BoundingBox toBoundingBox() {
+        return BoundingBox.of(p1.toLocation(world).getBlock(), p2.toLocation(world).getBlock());
     }
 
     public Location center() {
         return p1.getMidpoint(p2).toLocation(world);
+    }
+
+    public boolean overlaps(BlockRange other) {
+        return other.world().equals(world) && toBoundingBox().overlaps(other.toBoundingBox());
     }
 
     public boolean contains(BlockVector other) {
@@ -43,6 +34,10 @@ public record BlockRange(World world, BlockVector p1, BlockVector p2) implements
 
     public boolean contains(Location other) {
         return other.getWorld().equals(world) && toBoundingBox().contains(other.toVector());
+    }
+    
+    public boolean contains(Block block) {
+        return block.getWorld().equals(world) && toBoundingBox().contains(block.getLocation().add(0.5, 0.5, 0.5).toVector());
     }
 
     public int volume() {
@@ -53,11 +48,6 @@ public record BlockRange(World world, BlockVector p1, BlockVector p2) implements
     @Override
     public final String toString() {
         return world.getName() + "/(" + p1.toString() + ")~(" + p2.toString() + ")";
-    }
-
-    public static final BlockRange fromLocations(Location loc1, Location loc2) {
-        assert loc1.getWorld().equals(loc2.getWorld());
-        return new BlockRange(loc1.getWorld(), new BlockVector(loc1.toVector()), new BlockVector(loc2.toVector()));
     }
 
     @Override

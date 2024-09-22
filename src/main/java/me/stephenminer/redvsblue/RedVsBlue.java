@@ -49,37 +49,39 @@ public final class RedVsBlue extends JavaPlugin {
         pm.registerEvents(new ArenaSelector.EventListener(), this);
     }
 
-    
-    /**
-     * /rvb
-     *      join/leave [id] [player]
-     *      forcestart/forceend [id]
-     *      
-     * /rvbconfig
-     *      reload
-     *      minplayers [#]
-     *      maxplayers [#]
-     *      arena <id> 
-     *          spawn lobby/red/blue
-     *          wall
-     *              list
-     *              material <#> [mat]
-     *              delete <#>
-     *          loot
-     *              [delete <#>]
-     *          falltime [#]
-     *          delete
-     * 
-     * /rvbgive <item> [#] [player]
-     */
     private void registerCommands() {
         register("rvb", new CommandTreeHandler(Map.of(
+            "help", new MessageResponse("""
+Usage:
+/rvb
+    join/leave [id] [player]
+    forcestart/forceend [id]"""),
             "join", new JoinArena(this),
             "leave", new LeaveArena(),
             "forcestart", new ForceStart(),
             "forceend", new ForceEnd()
         )));
         register("rvbconfig", new CommandTreeHandler(Map.of(
+            "help", new MessageResponse("""
+Usage:
+/rvbconfig
+    reload
+    minplayers [#]
+    maxplayers [#]
+    startdelay [#]
+    revealdelay [#]
+    arena <id> 
+        spawn lobby
+        spawn <teamname>
+        rmteam <teamname>
+        wall
+            list
+            material <#> [mat]
+            delete <#>
+        loot
+                delete <#>]
+        falltime [#]
+        delete"""),
             "reload", new Reload(this),
             "minplayers", new IntConfigChange(this, "playerlimit.min", "Minimum Players"),
             "maxplayers", new IntConfigChange(this, "playerlimit.max", "Maximum Players"),

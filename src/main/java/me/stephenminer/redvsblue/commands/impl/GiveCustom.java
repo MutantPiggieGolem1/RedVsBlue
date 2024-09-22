@@ -23,7 +23,10 @@ public class GiveCustom implements TabExecutor {
                 return false;
             }
             int size = args.length;
-            if (size < 1) return false;
+            if (size < 1) {
+                sender.sendMessage(ChatColor.GRAY + "Usage: /rvbgive <item> [#] [player]");
+                return false;
+            }
 
             CustomItems oi;
             try {
@@ -34,7 +37,7 @@ public class GiveCustom implements TabExecutor {
             }
             int amount = 1;
             if (size >= 2) amount = Integer.parseInt(args[1]);
-            if (oi == CustomItems.ARENAWAND || oi == CustomItems.WALLWAND || oi == CustomItems.WALLREMOVER) {
+            if (oi == CustomItems.ARENAWAND || oi == CustomItems.WALLWAND || oi == CustomItems.WALLREMOVER || oi == CustomItems.LOOTWAND) {
                 if (!player.hasPermission("rvb.commands.wand")) {
                     player.sendMessage(ChatColor.RED + "You do not have permission to do that!");
                     return false;

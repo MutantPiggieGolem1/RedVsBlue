@@ -21,7 +21,7 @@ public class ArenaSetLoc implements ArenaHandledCommand {
     @Override
     public boolean execute(CommandSender sender, ArenaConfig arena, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage(ChatColor.RED + "Invalid Arguments!");
+            sender.sendMessage(ChatColor.RED + "Invalid arguments!");
             return false;
         }
         var arg = args[0].toLowerCase().trim();

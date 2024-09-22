@@ -12,6 +12,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -93,7 +94,7 @@ public class SetupWandsUse implements Listener {
                 return;
             }
 
-            ArenaConfig overlap = ArenaConfigUtil.findOnFileDeep(inprog.aLoc(), inprog.bLoc());
+            ArenaConfig overlap = ArenaConfigUtil.findOnFileDeep(inprog.toRange());
             if (overlap != null) {
                 player.sendMessage(ChatColor.RED + "Area intersects with other arena '" + overlap.id() + "', try again.");
                 return;
@@ -123,16 +124,16 @@ public class SetupWandsUse implements Listener {
         
         if (!wToCreate.containsKey(uuid)) wToCreate.put(uuid, new WallRangeBuilder(player.getWorld()));
         WallRangeBuilder inprog = wToCreate.get(uuid);
-        Location loc;
+        Block target;
         ArenaConfig arena;
         switch (action){
             case RIGHT_CLICK_AIR:
             case RIGHT_CLICK_BLOCK:
-                loc = action == Action.RIGHT_CLICK_AIR ? 
-                    player.getLocation().getBlock().getLocation() :
-                    event.getClickedBlock().getLocation();
+                target = action == Action.RIGHT_CLICK_AIR ? 
+                    player.getLocation().getBlock() :
+                    event.getClickedBlock();
     
-                arena = ArenaConfigUtil.findOnFileDeep(loc);
+                arena = ArenaConfigUtil.findOnFileDeep(target);
                 if (arena == null) {
                     player.sendMessage(ChatColor.RED + "There is no arena here!");
                     return;
@@ -142,16 +143,16 @@ public class SetupWandsUse implements Listener {
                 }
                 
                 inprog.arena = Optional.of(arena);
-                inprog.b = new BlockVector(loc.toVector());
+                inprog.b = new BlockVector(target.getLocation().toVector());
                 player.sendMessage(ChatColor.GREEN + "Position 2 set!");
                 break;
             case LEFT_CLICK_AIR:
             case LEFT_CLICK_BLOCK:
-                loc = action == Action.LEFT_CLICK_AIR ? 
-                    player.getLocation().getBlock().getLocation() :
-                    event.getClickedBlock().getLocation();
+                target = action == Action.LEFT_CLICK_AIR ? 
+                    player.getLocation().getBlock() :
+                    event.getClickedBlock();
 
-                arena = ArenaConfigUtil.findOnFileDeep(loc);
+                arena = ArenaConfigUtil.findOnFileDeep(target);
                 if (arena == null) {
                     player.sendMessage(ChatColor.RED + "There is no arena here!");
                     return;
@@ -161,7 +162,7 @@ public class SetupWandsUse implements Listener {
                 }
 
                 inprog.arena = Optional.of(arena);
-                inprog.a = new BlockVector(loc.toVector());
+                inprog.a = new BlockVector(target.getLocation().toVector());
                 player.sendMessage(ChatColor.GREEN + "Position 1 set!");
                 break;
             default:
@@ -184,7 +185,7 @@ public class SetupWandsUse implements Listener {
             player.sendMessage(ChatColor.RED + "Cancelling creation");
         } else {
             Material mat = Material.matchMaterial(msg);
-            if (mat == null) {
+            if (mat == null || !mat.isBlock() || !mat.isSolid()) {
                 player.sendMessage(ChatColor.YELLOW + "Invalid Material, try again.");
                 return;
             }
@@ -215,13 +216,13 @@ public class SetupWandsUse implements Listener {
         ) return;
         event.setCancelled(true);
 
-        var arena = ArenaConfigUtil.findOnFileDeep(event.getBlock().getLocation());
+        var arena = ArenaConfigUtil.findOnFileDeep(event.getBlock());
         if (arena == null) {
             player.sendMessage(ChatColor.RED + "There is no arena here!");
             return;
         }
     
-        var wall = arena.findWall(event.getBlock().getLocation());
+        var wall = arena.findWall(event.getBlock());
         if (!wall.isPresent()){
             player.sendMessage(ChatColor.RED + "There is no wall here!");
             return;
@@ -276,14 +277,6 @@ public class SetupWandsUse implements Listener {
 
         public BlockRange toRange() {
             return new BlockRange(world, a, b);
-        }
-
-        public @Nullable Location aLoc() {
-            return a == null ? null : a.toLocation(world);
-        }
-
-        public @Nullable Location bLoc() {
-            return b == null ? null : b.toLocation(world);
         }
     }
     private record WallIdentifier(ArenaConfig arena, BlockRange wall) {}

@@ -19,18 +19,17 @@ public class ArenaRemoveTeam implements ArenaHandledCommand {
     @Override
     public boolean execute(CommandSender sender, ArenaConfig arena, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage(ChatColor.RED + "Invalid Arguments!");
+            sender.sendMessage(ChatColor.RED + "Invalid arguments!");
             return false;
         }
         var arg = args[0].toLowerCase();
-        if (arena.delSpawn(arg)) {
-            sender.sendMessage(
-                    ChatColor.GREEN + StringCaser.toTitleCase(arg) + " Spawn: -> " + ChatColor.LIGHT_PURPLE + "null");
-            return true;
-        } else {
+        if (!arena.delSpawn(arg)) {
             sender.sendMessage(ChatColor.RED + "Arena '" + arena.id() + "' doesn't have a team '" + arg + "'.");
             return false;
         }
+        sender.sendMessage(
+                ChatColor.GREEN + StringCaser.toTitleCase(arg) + " Spawn: -> " + ChatColor.LIGHT_PURPLE + "null");
+        return true;
     }
 
     @Override

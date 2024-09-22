@@ -93,8 +93,7 @@ public class PlayerHandling implements Listener {
         Player player = event.getPlayer();
         var oa = Arena.arenaOf(player);
         if (!oa.isPresent()) return;
-        Arena arena = oa.get();
-        if (!arena.canBreak(player, event.getBlock())) {
+        if (!oa.get().canBreak(player, event.getBlock())) {
             event.setCancelled(true);
             player.sendMessage(ChatColor.RED + "You can't place blocks here!");
             return;
@@ -106,11 +105,9 @@ public class PlayerHandling implements Listener {
         Player player = event.getPlayer();
         var oa = Arena.arenaOf(player);
         if (!oa.isPresent()) return;
-        Arena arena = oa.get();
-        Block block = event.getBlock();
-        if (!arena.canBreak(player, block)) {
+        if (!oa.get().canBreak(player, event.getBlock())) {
             event.setCancelled(true);
-            player.sendMessage(ChatColor.RED + "you can't break blocks here");
+            player.sendMessage(ChatColor.RED + "You can't break blocks here!");
             return;
         }
     }

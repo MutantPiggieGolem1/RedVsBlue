@@ -1,12 +1,11 @@
 package me.stephenminer.redvsblue.util;
 
-import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
-import org.bukkit.Location;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 
 import me.stephenminer.redvsblue.RedVsBlue;
@@ -27,20 +26,18 @@ public class ArenaConfigUtil {
 
     public static void reload() {
         cfgFile.reloadConfig();
-        var cfg = cfgFile.getConfig();
-        if (!cfg.isConfigurationSection("arenas")) cfg.createSection("arenas");
         arenaConfigs = cfgFile.getConfig().getConfigurationSection("arenas");
     }
 
-    private static String deepToShallow(ArenaConfig arena) {
-        if (arenaConfigs == null) throw new IllegalStateException("arenaConfigs has not been initialized.");
-        for (String key : arenaConfigs.getKeys(false)) {
-            var a = arenaConfigs.getObject(key, ArenaConfig.class);
-            if (a == null) continue;
-            if (a.id().equals(arena.id())) return key;
-        }
-        return null; // should NEVER occur
-    }
+    // private static String deepToShallow(ArenaConfig arena) {
+    //     if (arenaConfigs == null) throw new IllegalStateException("arenaConfigs has not been initialized.");
+    //     for (String key : arenaConfigs.getKeys(false)) {
+    //         var a = arenaConfigs.getObject(key, ArenaConfig.class);
+    //         if (a == null) continue;
+    //         if (a.id().equals(arena.id())) return key;
+    //     }
+    //     return null; // should NEVER occur
+    // }
 
     public static Set<String> idsOnFileShallow() {
         if (arenaConfigs == null) throw new IllegalStateException("arenaConfigs has not been initialized.");
@@ -53,12 +50,7 @@ public class ArenaConfigUtil {
 
     private static Set<ArenaConfig> valuesOnFile() {
         if (arenaConfigs == null) throw new IllegalStateException("arenaConfigs has not been initialized.");
-        HashSet<ArenaConfig> builder = new HashSet<>();
-        for (String key : arenaConfigs.getKeys(false)) {
-            var a = arenaConfigs.getObject(key, ArenaConfig.class);
-            if (a != null) builder.add(a); // a will be null for malformed config
-        }
-        return builder;
+        return idsOnFileShallow().stream().map(ArenaConfigUtil::findOnFileShallow).collect(Collectors.toSet());
     }
 
     /**
@@ -76,15 +68,18 @@ public class ArenaConfigUtil {
     }
 
     public static @Nullable ArenaConfig findOnFileShallow(String id) {
-        return arenaConfigs.getObject(id, ArenaConfig.class);
+        var a = arenaConfigs.getObject(id, ArenaConfig.class);
+        if (a == null) return null;
+        assert a.id() == id;
+        return a;
     }
 
-    public static @Nullable ArenaConfig findOnFileDeep(Location... loc) {
-        for (var arena : valuesOnFile()) {
-            for (Location l : loc)
-                if (arena.contains(l)) return arena;
-        }
-        return null;
+    public static @Nullable ArenaConfig findOnFileDeep(Block block) {
+        return valuesOnFile().stream().filter(a -> a.getBounds().contains(block)).findAny().orElse(null);
+    }
+
+    public static @Nullable ArenaConfig findOnFileDeep(BlockRange range) {
+        return valuesOnFile().stream().filter(a -> a.getBounds().overlaps(range)).findAny().orElse(null);
     }
 
     public static void saveToFileDeep(ArenaConfig arena) {
@@ -95,7 +90,7 @@ public class ArenaConfigUtil {
 
     public static void removeFromFileDeep(ArenaConfig arena) {
         if (arenaConfigs == null) throw new IllegalStateException("arenaConfigs has not been initialized.");
-        arenaConfigs.set(deepToShallow(arena), null);
+        arenaConfigs.set(arena.id(), null);
         cfgFile.saveConfig();
     }
 

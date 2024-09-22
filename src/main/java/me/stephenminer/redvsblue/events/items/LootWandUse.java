@@ -1,8 +1,8 @@
 package me.stephenminer.redvsblue.events.items;
 
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -22,7 +22,7 @@ import me.stephenminer.redvsblue.RedVsBlue;
 import me.stephenminer.redvsblue.util.ArenaConfigUtil;
 
 public class LootWandUse implements Listener {
-    private final Map<UUID, Location> selectedTargets;
+    private final Map<UUID, Block> selectedTargets;
 
     private final RedVsBlue plugin;
 
@@ -48,13 +48,13 @@ public class LootWandUse implements Listener {
             return;
         }
         
-        var arena = ArenaConfigUtil.findOnFileDeep(target.getLocation());
+        var arena = ArenaConfigUtil.findOnFileDeep(target);
         if (arena == null) {
             player.sendMessage(ChatColor.RED + "That block isn't in an arena!");
             return;
         }
 
-        selectedTargets.put(player.getUniqueId(), target.getLocation());
+        selectedTargets.put(player.getUniqueId(), target);
         player.sendMessage(ChatColor.GREEN
                 + "Please type a loot table key to assign to this block, 'delete' to unlink it, or 'cancel'!");
     }
@@ -62,24 +62,23 @@ public class LootWandUse implements Listener {
     @EventHandler
     public void chatFollowup(AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
-        var targetLoc = selectedTargets.get(player.getUniqueId());
-        if (targetLoc == null) return;
+        var target = selectedTargets.get(player.getUniqueId());
+        if (target == null) return;
         selectedTargets.remove(player.getUniqueId());
         event.setCancelled(true);
 
-        var arena = ArenaConfigUtil.findOnFileDeep(targetLoc);
+        var arena = ArenaConfigUtil.findOnFileDeep(target);
         if (arena == null) {
             player.sendMessage(ChatColor.RED + "That block isn't in an arena!");
             return;
         }
 
-        var target = targetLoc.getBlock();
         String arg = ChatColor.stripColor(event.getMessage()).toLowerCase();
         switch (arg) {
             case "cancel":
                 break;
             case "delete":
-                if (arena.deleteLootCache(new BlockVector(targetLoc.toVector()))) {
+                if (arena.deleteLootCache(new BlockVector(target.getLocation().toVector()))) {
                     player.sendMessage(ChatColor.GREEN + "Success! Unlinked a " + target.getType().toString() + ".");
                 } else {
                     player.sendMessage(ChatColor.YELLOW + "There was no loot cache there!");
@@ -104,7 +103,7 @@ public class LootWandUse implements Listener {
                             player.sendMessage(ChatColor.RED + "Missing loot table for key '" + key + "'.");
                             return;
                         }
-                        if (arena.createLootCache(new BlockVector(targetLoc.toVector()), key.toString())) {
+                        if (arena.createLootCache(new BlockVector(target.getLocation().toVector()), key.toString())) {
                             player.sendMessage(ChatColor.GREEN + "Success! Linked a " + target.getType().toString() + " to "+key.toString()+".");
                         } else {
                             player.sendMessage(ChatColor.YELLOW + "There was already a loot cache there!");

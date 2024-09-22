@@ -13,6 +13,7 @@ import javax.annotation.Nullable;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.util.BlockVector;
 
@@ -57,12 +58,17 @@ public class ArenaConfig implements ConfigurationSerializable {
         return a;
     }
 
+    // Getters
+    public String id() {
+        return id;
+    }
+
     public boolean isBuildable() {
         return lobby != null && spawns.size() >= 2;
     }
 
-    public boolean contains(Location l) {
-        return bounds.contains(l);
+    public BlockRange getBounds() {
+        return bounds;
     }
 
     public boolean hasTeam(String team) {
@@ -73,31 +79,8 @@ public class ArenaConfig implements ConfigurationSerializable {
         return new HashSet<>(spawns.keySet());
     }
 
-    public Optional<BlockRange> findWall(Location l) {
-        if (!l.getWorld().equals(bounds.world())) return Optional.empty();
-        return findWall(new BlockVector(l.toVector()));
-    }
-
-    public Optional<BlockRange> findWall(BlockVector loc) {
-        return walls.keySet().stream().filter((r) -> r.contains(loc)).findFirst();
-    }
-
-    public boolean createWall(Material mat, BlockRange range) {
-        if (!bounds.toBoundingBox().contains(range.toBoundingBox())) throw new IllegalArgumentException("Walls must be built inside the arena.");
-        for (var wallRange : walls.keySet()) {
-            if (range.toBoundingBox().overlaps(wallRange.toBoundingBox()))
-                return false;
-        }
-        walls.put(range, mat);
-        WorldEditInterface.fill(range, mat).join();
-        return true;
-    }
-
-    public boolean destroyWall(BlockRange range) {
-        if (!walls.containsKey(range)) return false;
-        walls.remove(range);
-        WorldEditInterface.fill(range, Material.AIR).join();
-        return true;
+    public Optional<BlockRange> findWall(Block block) {
+        return walls.keySet().stream().filter((r) -> r.contains(block)).findFirst();
     }
 
     public LinkedHashMap<Location, String> getLootCaches() {
@@ -108,46 +91,73 @@ public class ArenaConfig implements ConfigurationSerializable {
         return out;
     }
 
+    public @Nonnegative int getWallFallTime() {
+        return wallFallTime;
+    }
+    // ===
+    
+    // Setters
+    public boolean createWall(Material mat, BlockRange range) {
+        if (!bounds.overlaps(range)) throw new IllegalArgumentException("Walls must be built inside the arena.");
+        for (var wallRange : walls.keySet()) {
+            if (range.overlaps(wallRange))
+                return false;
+        }
+        walls.put(range, mat);
+        WorldEditInterface.fill(range, mat).join();
+        ArenaConfigUtil.saveToFileDeep(this);
+        return true;
+    }
+
+    public boolean destroyWall(BlockRange range) {
+        if (!walls.containsKey(range)) return false;
+        walls.remove(range);
+        WorldEditInterface.fill(range, Material.AIR).join();
+        ArenaConfigUtil.saveToFileDeep(this);
+        return true;
+    }
+
     public boolean createLootCache(BlockVector block, String lootTable) {
         if (lootCaches.containsKey(block)) return false;
-        return lootCaches.put(block, lootTable) == null;
+        var success = lootCaches.put(block, lootTable) == null;
+        ArenaConfigUtil.saveToFileDeep(this);
+        return success;
     }
 
     public boolean deleteLootCache(Location loc) {
         return loc.getWorld().equals(bounds.world()) && deleteLootCache(new BlockVector(loc.toVector()));
     }
-
     public boolean deleteLootCache(BlockVector block) {
-        return lootCaches.remove(block) != null;
+        var success = lootCaches.remove(block) != null;
+        ArenaConfigUtil.saveToFileDeep(this);
+        return success;
     }
 
     public void setLobby(Location l) {
         lobby = l;
+        ArenaConfigUtil.saveToFileDeep(this);
     }
 
     public BlockVector setSpawn(String team, BlockVector l) throws IllegalArgumentException {
         if (!bounds.contains(l)) throw new IllegalArgumentException("Spawns must be inside the arena.");
         var old = spawns.containsKey(team) ? spawns.get(team).clone() : null;
         spawns.put(team, l);
+        ArenaConfigUtil.saveToFileDeep(this);
         return old;
     }
 
     public boolean delSpawn(String team) {
-        return spawns.remove(team) != null;
-    }
-
-    public @Nonnegative int getWallFallTime() {
-        return wallFallTime;
+        var success = spawns.remove(team) != null;
+        ArenaConfigUtil.saveToFileDeep(this);
+        return success;
     }
 
     public void setWallFallTime(@Nonnegative int newTime) {
         if (newTime < 0) throw new IllegalArgumentException("Wall Fall Times must be nonnegative.");
         wallFallTime = newTime;
+        ArenaConfigUtil.saveToFileDeep(this);
     }
-
-    public String id() {
-        return id;
-    }
+    // ===
 
     @Override
     public Map<String, Object> serialize() {
