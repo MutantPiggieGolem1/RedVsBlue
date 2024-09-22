@@ -352,6 +352,7 @@ public class Arena {
                         c.getInventory().clear();
                         
                     l.setLootTable(cache.getValue());
+                    block.update(true); // write the newly loot-tabled block to the world
                 }
         
                 var copy = new ArrayList<UUID>(players);
