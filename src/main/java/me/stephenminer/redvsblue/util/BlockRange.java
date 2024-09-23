@@ -1,5 +1,6 @@
 package me.stephenminer.redvsblue.util;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -9,6 +10,10 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Hanging;
+import org.bukkit.entity.Player;
 import org.bukkit.util.BlockVector;
 import org.bukkit.util.BoundingBox;
 
@@ -18,10 +23,6 @@ public record BlockRange(World world, BlockVector p1, BlockVector p2) implements
      */
     private BoundingBox toBoundingBox() {
         return BoundingBox.of(p1.toLocation(world).getBlock(), p2.toLocation(world).getBlock());
-    }
-
-    public Location center() {
-        return p1.getMidpoint(p2).toLocation(world);
     }
 
     public boolean overlaps(BlockRange other) {
@@ -40,9 +41,17 @@ public record BlockRange(World world, BlockVector p1, BlockVector p2) implements
         return block.getWorld().equals(world) && toBoundingBox().contains(block.getLocation().add(0.5, 0.5, 0.5).toVector());
     }
 
+    public Location center() {
+        return p1.getMidpoint(p2).toLocation(world);
+    }
+
     public int volume() {
         var t = p1.subtract(p2);
         return Math.abs(t.getBlockX() * t.getBlockY() * t.getBlockZ());
+    }
+
+    public Collection<Entity> getTransitiveEntities() {
+        return world.getNearbyEntities(toBoundingBox(), e -> !(e instanceof Player || e instanceof Hanging || e instanceof ArmorStand));
     }
 
     @Override

@@ -44,7 +44,14 @@ public class CommandTreeHandler implements TabExecutor, HandledCommand {
 
     @Override
     public boolean execute(CommandSender sender, String[] args) {
-        var sub = args.length == 0 ? subCommands.get("help") : subCommands.get(args[0]);
+        if (args.length < 1) {
+            if (!subCommands.containsKey("help")) {
+                sender.sendMessage(ChatColor.RED + "Invalid arguments!");
+                return false;
+            }
+            return subCommands.get("help").execute(sender, args);
+        }
+        var sub = subCommands.get(args[0]);
         if (sub == null) {
             sender.sendMessage(ChatColor.RED + "Invalid arguments!");
             return false;

@@ -24,7 +24,7 @@ public class ArenaLoot implements ArenaHandledCommand {
             String out = "";
             int i = 0;
             for (var lc : arena.getLootCaches().entrySet()) {
-                out += " "+ ++i +". ("+lc.getKey().toString()+") "+lc.getValue();
+                out += " "+ ++i +". "+lc.getKey().getBlock().getType().toString()+ "@(" +lc.getKey().toVector().toString()+") "+lc.getValue() + "\n";
             }
             sender.sendMessage(out);
             return true;

@@ -78,6 +78,8 @@ public class Arena {
 
 
     public Arena(String id, BlockRange bounds, Location lobby, Map<BlockRange, Material> walls, Map<String, BlockVector> spawns, Map<BlockVector, String> lootCaches, int wallFallTime) {
+        if (Arena.arenaOf(id).isPresent()) throw new IllegalStateException("Only one arena may exist with a given id.");
+        
         this.plugin = RedVsBlue.getPlugin(RedVsBlue.class);
         this.board = Bukkit.getScoreboardManager().getNewScoreboard();
 
@@ -335,6 +337,8 @@ public class Arena {
                 if (period != ArenaPeriod.START) break;
             case START: // Runs Once
                 assert save.isDone(); // ensure world is saved
+                
+                bounds.getTransitiveEntities().forEach(e -> e.teleport(lobby.getWorld().getSpawnLocation())); // remove all entities
 
                 walls.forEach(Wall::buildWall); // raise the walls
 
@@ -607,20 +611,14 @@ public class Arena {
         return out;
     }
     
-    private void loadMapThen(Callback callback) {
-        save.thenAccept((clipboard) -> {
-            WorldEditInterface.paste(WorldEditInterface.toCuboidRegion(bounds), clipboard);
-            callback.run();
-        });
+    private void loadMapThen(Runnable callback) {
+        save.thenComposeAsync((clipboard) -> 
+            WorldEditInterface.paste(WorldEditInterface.toCuboidRegion(bounds), clipboard)
+        ).thenRun(callback);
     }
     // ===
 
     private enum ArenaPeriod {
         QUEUEING, START, RUNNING, END, ENDED
     }
-}
-
-@FunctionalInterface
-interface Callback {
-    public void run();
 }

@@ -64,7 +64,7 @@ public class ArenaConfig implements ConfigurationSerializable {
     }
 
     public boolean isBuildable() {
-        return lobby != null && spawns.size() >= 2;
+        return lobby != null && spawns.size() >= 2 && !Arena.arenaOf(id).isPresent();
     }
 
     public BlockRange getBounds() {
