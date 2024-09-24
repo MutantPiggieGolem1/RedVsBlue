@@ -54,9 +54,18 @@ public class LootWandUse implements Listener {
             return;
         }
 
-        selectedTargets.put(player.getUniqueId(), target);
-        player.sendMessage(ChatColor.GREEN
-                + "Please type a loot table key to assign to this block, 'delete' to unlink it, or 'cancel'!");
+        if (action == Action.RIGHT_CLICK_BLOCK) {
+            var loot = arena.getLootCaches().get(target.getLocation());
+            if (loot == null) {
+                player.sendMessage(ChatColor.GREEN + "That block is not linked to a loot table!");
+            } else {
+                player.sendMessage(ChatColor.GREEN + "That block is linked to the '" + loot + "' loot table!");
+            }
+        } else {
+            selectedTargets.put(player.getUniqueId(), target);
+            player.sendMessage(ChatColor.GREEN
+                    + "Please type a loot table key to assign to this block, 'delete' to unlink it, or 'cancel'!");
+        }
     }
 
     @EventHandler

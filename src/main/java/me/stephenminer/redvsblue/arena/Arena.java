@@ -240,7 +240,7 @@ public class Arena {
             Player p = Bukkit.getPlayer(uuid);
             if (p != null) clean(p);
         }
-        loadMapThen(() -> period = ArenaPeriod.ENDED);
+        loadMapThen(() -> {});
     }
     // ===
 
@@ -354,12 +354,13 @@ public class Arena {
 
                     if (block instanceof Nameable n)
                         n.setCustomName("RvB Loot Cache");
-
-                    if (block instanceof Container c)
-                        c.getInventory().clear();
                         
                     l.setLootTable(cache.getValue());
                     block.update(true); // write the newly loot-tabled block to the world
+
+                    block = block.getBlock().getState();
+                    if (block instanceof Container c)
+                        c.getInventory().clear();
                 }
         
                 var copy = new ArrayList<UUID>(players);
@@ -411,7 +412,7 @@ public class Arena {
                         "--------------------------",
                         t.getColor() + "" + ChatColor.BOLD + StringCaser.toTitleCase(t.getDisplayName()) + " Team Wins!",
                         ChatColor.DARK_AQUA + "Members: ",
-                        " > " + String.join(",", t.getEntries()),
+                        " > " + String.join(", ", t.getEntries()),
                         "--------------------------"
                     );
                     break;
@@ -500,8 +501,11 @@ public class Arena {
                             prefix = "Walls Fall";
                         }
                         if (revealBy != null && now < revealBy) {
-                            s = ( revealBy - now ) / 1000;
-                            prefix = "Players Reveal";
+                            long ns = ( revealBy - now ) / 1000;
+                            if (s == null || ns < s) {
+                                s = ns;
+                                prefix = "Players Reveal";
+                            }
                         }
                         if (prefix == null || s == null) yield "Deathmatch";
                         yield prefix + " in " + String.format("%02d:%02d", s / 60, s % 60);
@@ -615,13 +619,22 @@ public class Arena {
     }
     
     private void loadMapThen(Runnable callback) {
-        save.thenComposeAsync((clipboard) -> 
-            WorldEditInterface.paste(WorldEditInterface.toCuboidRegion(bounds), clipboard)
-        ).thenRun(callback);
+        if (!save.isDone()) {
+            plugin.getLogger().severe("Map '" + id + "' loaded before save completed. Load cancelled.");
+            callback.run();
+            return;
+        }
+        WorldEditInterface.paste(WorldEditInterface.toCuboidRegion(bounds), save.join()).thenRun(callback);
     }
     // ===
 
     private enum ArenaPeriod {
         QUEUEING, START, RUNNING, END, ENDED
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Arena a)) return false;
+        return a.getId().equals(id);
     }
 }

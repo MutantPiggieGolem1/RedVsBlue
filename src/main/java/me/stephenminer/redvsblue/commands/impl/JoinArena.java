@@ -69,10 +69,7 @@ public class JoinArena implements HandledCommand {
 
     @Override
     public Collection<String> getOptions(int argPos) {
-        if (argPos == 0) return Stream.concat(
-                Arena.joinableArenas().stream().map(Arena::getId),
-                ArenaConfigUtil.readyIDsOnFileDeep().stream()
-            ).toList();
+        if (argPos == 0) return joinables();
         if (argPos == 1) return Bukkit.getOnlinePlayers()
             .stream().map((p) -> p.getName()).toList();
         return null;
@@ -84,5 +81,12 @@ public class JoinArena implements HandledCommand {
             if (arenaConfig == null) return null;
             return arenaConfig.build();
         });
+    }
+
+    public static Collection<String> joinables() {
+        return Stream.concat(
+            Arena.joinableArenas().stream().map(Arena::getId),
+            ArenaConfigUtil.readyIDsOnFileDeep().stream()
+        ).toList();
     }
 }

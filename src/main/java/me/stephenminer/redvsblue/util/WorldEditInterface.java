@@ -1,6 +1,7 @@
 package me.stephenminer.redvsblue.util;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 import org.bukkit.Material;
 
@@ -44,22 +45,26 @@ public class WorldEditInterface {
                 clipboard.close();
 
                 return clipboard;
+            } catch (Exception e) {
+                throw new CompletionException(e);
             }
         });
     }
 
     public static CompletableFuture<Operation> paste(CuboidRegion target, BlockArrayClipboard clipboard) {
-        var holder = new ClipboardHolder(clipboard);
         return CompletableFuture.supplyAsync(() -> {
-            try (EditSession editSession = WorldEdit.getInstance().newEditSession(target.getWorld())) {
-                Operation op = holder.createPaste(editSession)
-                        .to(target.getMinimumPoint())
-                        .ignoreAirBlocks(false).build();
-
-                Operations.complete(op);
-                holder.close();
-
-                return op;
+            try (ClipboardHolder holder = new ClipboardHolder(clipboard)) {
+                try (EditSession editSession = WorldEdit.getInstance().newEditSession(target.getWorld())) {
+                    Operation op = holder.createPaste(editSession)
+                            .to(target.getMinimumPoint())
+                            .ignoreAirBlocks(false).build();
+                    Operations.complete(op);
+                    return op;
+                } catch (Exception e) {
+                    throw new CompletionException(e);
+                }
+            } catch (Exception e) {
+                throw new CompletionException(e);
             }
         });
     }

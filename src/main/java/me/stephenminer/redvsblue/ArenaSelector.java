@@ -16,7 +16,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import me.stephenminer.redvsblue.arena.Arena;
-import me.stephenminer.redvsblue.util.ArenaConfigUtil;
+import me.stephenminer.redvsblue.commands.impl.JoinArena;
 
 public class ArenaSelector implements InventoryHolder {
     private final RedVsBlue plugin;
@@ -41,12 +41,8 @@ public class ArenaSelector implements InventoryHolder {
                     return;
                 } else {
                     inv.clear();
-                    for (Arena a : Arena.joinableArenas()) {
-                        inv.addItem(arenaIcon(a.getId()));
-                    }
-                    for (String id : ArenaConfigUtil.readyIDsOnFileDeep()) {
+                    for (String id : JoinArena.joinables())
                         inv.addItem(arenaIcon(id));
-                    }
                 }
             }
         }.runTaskTimer(plugin, 0, 100);

@@ -41,8 +41,8 @@ public enum CustomItems {
     )),
     LOOTWAND(Material.GOLDEN_SHOVEL, ChatColor.GOLD + "Loot-Cache Wand", List.of(
         ChatColor.ITALIC + "Configures lootable arena containers",
-        ChatColor.YELLOW + "Left-Click Unlink Container",
-        ChatColor.YELLOW + "Right-Click Link Container",
+        ChatColor.YELLOW + "Left-Click Link Containers",
+        ChatColor.YELLOW + "Right-Click Check Links",
         ChatColor.BLACK + "loot-wand"
     )),
     THROWINGJUICE(Material.NETHER_STAR, ChatColor.DARK_AQUA + "Throwing Juice", List.of(
@@ -121,7 +121,7 @@ public enum CustomItems {
     public static void addKit(PlayerInventory inv, ChatColor color) {
         assert color.isColor();
         var c0 = color.asBungee().getColor();
-        var c1 = Color.fromARGB(c0 == null ? 0xFF964B00 : c0.getRGB());
+        var c1 = c0 == null ? null : Color.fromARGB(c0.getRGB()).setAlpha(255);
         var c2 = colorMap.getOrDefault(color, DyeColor.BROWN);
 
         inv.setHelmet(new ItemStack(Material.CHAINMAIL_HELMET));
