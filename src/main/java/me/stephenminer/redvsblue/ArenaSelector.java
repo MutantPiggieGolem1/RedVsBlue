@@ -41,6 +41,9 @@ public class ArenaSelector implements InventoryHolder {
                     return;
                 } else {
                     inv.clear();
+                    for (Arena a : Arena.joinableArenas()) {
+                        inv.addItem(arenaIcon(a.getId()));
+                    }
                     for (String id : ArenaConfigUtil.readyIDsOnFileDeep()) {
                         inv.addItem(arenaIcon(id));
                     }

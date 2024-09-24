@@ -1,6 +1,7 @@
 package me.stephenminer.redvsblue.commands.impl;
 
 import java.util.Collection;
+import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
@@ -68,7 +69,10 @@ public class JoinArena implements HandledCommand {
 
     @Override
     public Collection<String> getOptions(int argPos) {
-        if (argPos == 0) return ArenaConfigUtil.readyIDsOnFileDeep();
+        if (argPos == 0) return Stream.concat(
+                Arena.joinableArenas().stream().map(Arena::getId),
+                ArenaConfigUtil.readyIDsOnFileDeep().stream()
+            ).toList();
         if (argPos == 1) return Bukkit.getOnlinePlayers()
             .stream().map((p) -> p.getName()).toList();
         return null;

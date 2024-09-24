@@ -56,6 +56,9 @@ public class Arena {
     public static Optional<Arena> disconnectedFrom(Player p) {
         return arenas.stream().filter((a) -> a.board.getEntryTeam(p.getName()) != null).findFirst();
     }
+    public static Set<Arena> joinableArenas() {
+        return arenas.stream().filter(Arena::isJoinable).collect(Collectors.toSet());
+    }
 
     private final RedVsBlue plugin;
 
