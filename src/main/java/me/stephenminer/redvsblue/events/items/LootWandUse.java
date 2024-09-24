@@ -85,6 +85,7 @@ public class LootWandUse implements Listener {
         String arg = ChatColor.stripColor(event.getMessage()).toLowerCase();
         switch (arg) {
             case "cancel":
+                player.sendMessage(ChatColor.GREEN + "Cancelled!");
                 break;
             case "delete":
                 if (arena.deleteLootCache(new BlockVector(target.getLocation().toVector()))) {

@@ -10,12 +10,10 @@ import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
-import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Region;
-import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.block.BlockType;
 import com.sk89q.worldedit.world.block.BlockTypes;
 
@@ -40,9 +38,7 @@ public class WorldEditInterface {
                 ForwardExtentCopy op = new ForwardExtentCopy(session, region, clipboard,
                         region.getMinimumPoint());
                 op.setCopyingEntities(false);
-
                 Operations.complete(op);
-                clipboard.close();
 
                 return clipboard;
             } catch (Exception e) {
@@ -51,22 +47,11 @@ public class WorldEditInterface {
         });
     }
 
-    public static CompletableFuture<Operation> paste(CuboidRegion target, BlockArrayClipboard clipboard) {
-        return CompletableFuture.supplyAsync(() -> {
-            try (ClipboardHolder holder = new ClipboardHolder(clipboard)) {
-                try (EditSession editSession = WorldEdit.getInstance().newEditSession(target.getWorld())) {
-                    Operation op = holder.createPaste(editSession)
-                            .to(target.getMinimumPoint())
-                            .ignoreAirBlocks(false).build();
-                    Operations.complete(op);
-                    return op;
-                } catch (Exception e) {
-                    throw new CompletionException(e);
-                }
-            } catch (Exception e) {
-                throw new CompletionException(e);
-            }
-        });
+    public static CompletableFuture<Void> paste(CuboidRegion target, BlockArrayClipboard clipboard) {
+        if (clipboard == null) throw new IllegalArgumentException("Clipboard must not be null");
+        return CompletableFuture.runAsync(
+            () -> clipboard.paste(target.getWorld(), target.getMinimumPoint(), false, true, false, null)
+        ).thenRun(() -> clipboard.close());
     }
 
     public static CompletableFuture<Void> fill(BlockRange range, Material mat) {

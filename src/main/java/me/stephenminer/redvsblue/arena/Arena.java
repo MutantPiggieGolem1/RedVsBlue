@@ -1,5 +1,7 @@
 package me.stephenminer.redvsblue.arena;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -118,8 +120,15 @@ public class Arena {
         // Begin game loop
         initializeBoard();
         this.period = ArenaPeriod.QUEUEING;
+        var outerThis = this;
         new BukkitRunnable() {
-            public void run() {update();}
+            public void run() {
+                if (!Arena.arenas.contains(outerThis)) {
+                    this.cancel();
+                    return;
+                }
+                update();
+            }
         }.runTaskTimer(plugin, 0, 20 * 2); // Period should be any factor of 10 seconds
         // ===
     }
@@ -131,7 +140,7 @@ public class Arena {
         switch (period) {
             case QUEUEING:
                 players.add(player.getUniqueId());
-                broadcast(ChatColor.GREEN + player.getName() + " has joined the game! "+getPlayerNumStr());
+                broadcast(ChatColor.GREEN + player.getName() + " has joined the game! ");
                 player.setGameMode(GameMode.ADVENTURE); // send them to the lobby
                 player.setScoreboard(board);
                 player.teleport(lobby);
@@ -170,7 +179,7 @@ public class Arena {
 
         switch (period) {
             case QUEUEING:
-                broadcast(ChatColor.RED + player.getDisplayName() + " has quit the game! "+getPlayerNumStr());
+                broadcast(ChatColor.RED + player.getDisplayName() + " has quit the game! "+getPlayerNumStr(true));
             break;
             case RUNNING:
             case START:
@@ -309,9 +318,7 @@ public class Arena {
     private long fallBy = 0; // when the walls should fall (unix timestamp)
     private Long revealBy = null; // when players should be revealed (unix timestamp)
     private boolean initialRevealCompleted = false;
-    private void update() { // MUST BE SCHEDULED ON A FACTOR OF 10 SECONDS
-        if (!Arena.arenas.contains(this)) return;
-        
+    private void update() { // MUST BE SCHEDULED ON A FACTOR OF 10 SECONDS        
         switch (period) {
             case QUEUEING: // Repeats
                 long now = System.currentTimeMillis();
@@ -322,9 +329,12 @@ public class Arena {
                             broadcast(Sound.ENTITY_CAT_PURREOW, 50, 1);
                             broadcastTitle(ChatColor.GREEN + "The Game Has Begun!");
                             period = ArenaPeriod.START;
+                        } else if (save.isDone() && players.isEmpty()) { // gracefully close if nobody's playing
+                            loadMapThen(() -> Arena.arenas.remove(this));
+                            period = ArenaPeriod.ENDED;
                         } else {
                             startAttempt += 500 * plugin.loadArenaStartDelay();
-                            broadcast(ChatColor.RED + "Failed to start! " + getPlayerNumStr());
+                            broadcast(ChatColor.RED + "Failed to start! " + getPlayerNumStr(true));
                         }
                     } else {
                         long secondsUntil = (startAttempt - now) / 1000;
@@ -490,7 +500,7 @@ public class Arena {
         
                 Team time = board.getTeam("time");
                 time.setPrefix(switch (period) {
-                    case QUEUEING -> players.size() >= plugin.loadMinPlayers() ? "Queueing" : "Waiting";
+                    case QUEUEING -> "Queueing: " + getPlayerNumStr(false);
                     case START -> "Loading";
                     case RUNNING -> {
                         long now = System.currentTimeMillis();
@@ -578,8 +588,9 @@ public class Arena {
         return op != null && op.isOnline();
     }
 
-    private String getPlayerNumStr() {
-        return "("+players.size() + "/" + plugin.loadMinPlayers() + " players)";
+    private String getPlayerNumStr(boolean parenthesize) {
+        var s = players.size() + "/" + plugin.loadMinPlayers() + " players";
+        return parenthesize ? "("+s+")" : s;
     }
 
     public boolean hasWallFallen() {
@@ -620,11 +631,20 @@ public class Arena {
     
     private void loadMapThen(Runnable callback) {
         if (!save.isDone()) {
-            plugin.getLogger().severe("Map '" + id + "' loaded before save completed. Load cancelled.");
+            plugin.getLogger().warning("Map '" + id + "' loaded before save completed. Load cancelled.");
             callback.run();
+            save.cancel(true);
             return;
         }
-        WorldEditInterface.paste(WorldEditInterface.toCuboidRegion(bounds), save.join()).thenRun(callback);
+        WorldEditInterface.paste(WorldEditInterface.toCuboidRegion(bounds), save.join())
+            .orTimeout(1, MINUTES)
+            .whenComplete((__, ex) -> {
+                if (ex != null) {
+                    plugin.getLogger().severe("Map '" + id + "' encountered an exception loading");
+                    ex.printStackTrace();
+                }
+                callback.run();
+            });
     }
     // ===
 
