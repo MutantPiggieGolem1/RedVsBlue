@@ -357,20 +357,25 @@ public class Arena {
 
                 for (var cache : lootCaches.entrySet()) { // load the loot
                     var block = cache.getKey().getBlock().getState();
-                    if (!(block instanceof Lootable l)) {
+                    if (!(block instanceof Lootable)) {
                         plugin.getLogger().warning("[Arena '"+ id +"'] Unlinked loot table at "+block.getLocation());
                         continue;
                     }
+                    block.getBlock().setType(block.getType(), false); // replace the block (attempt to reset first-open)
+
+                    block = block.getBlock().getState();
+
+                    if (block instanceof Container c)
+                        c.getInventory().clear(); // empty whatever was in there before
+
+                    block = block.getBlock().getState(); // re-fetch the state because inventory operations mess with it
 
                     if (block instanceof Nameable n)
                         n.setCustomName("RvB Loot Cache");
                         
-                    l.setLootTable(cache.getValue());
+                    ((Lootable) block).setLootTable(cache.getValue());
+                
                     block.update(true); // write the newly loot-tabled block to the world
-
-                    block = block.getBlock().getState();
-                    if (block instanceof Container c)
-                        c.getInventory().clear();
                 }
         
                 var copy = new ArrayList<UUID>(players);

@@ -23,19 +23,19 @@ import net.md_5.bungee.api.chat.TextComponent;
 
 public class ThrowingJuiceUse implements Listener {
     private final Map<UUID, Long> cooldowns = new HashMap<>();
-    private final double SPLASHRADIUS = 1.5;
+    private final double SPLASHRADIUS = 3;
 
     @EventHandler
     public void throwJuice(PlayerInteractEvent event) {
         if (!event.hasItem()) return;
         ItemStack item = event.getItem();
+        if (!CustomItems.THROWINGJUICE.is(item)) return;
         Player player = event.getPlayer();
         long now = System.currentTimeMillis();
         if (cooldowns.containsKey(player.getUniqueId()) && cooldowns.get(player.getUniqueId()) > now) {
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(net.md_5.bungee.api.ChatColor.AQUA + "Ability on Cooldown!"));
             return;
         }
-        if (!CustomItems.THROWINGJUICE.is(item)) return;
         
         var world = player.getWorld();
         var eyeLoc = player.getEyeLocation();
